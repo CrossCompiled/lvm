@@ -20,7 +20,11 @@ target_include_directories(${LECTURE} INTERFACE includes)
 
 # Executeables
 add_executable(LittleCompiler src/LittleCompiler/main.cpp)
-#target_link_libraries(radio ${LECTURE})
+target_link_libraries(LittleCompiler ${LECTURE})
+
+# Executeables
+add_executable(LittleInterpreter src/LittleInterpreter/main.cpp)
+target_link_libraries(LittleInterpreter ${LECTURE})
 
 
 #########

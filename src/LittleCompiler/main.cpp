@@ -1,7 +1,6 @@
-//
-// Created by kaspersk on 10/5/16.
-//
+#include "LittleVirtualMachine/LittleCompiler/compiler_states.h"
 
 int main(){
-    return 0;
+    Compiler compiler;
+		compiler.initiate();
 }
