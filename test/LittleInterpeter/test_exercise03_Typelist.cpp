@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <LittleVirtualMachine/LittleInterpeter/TypeList.h>
+#include <LittleVirtualMachine/LittleShared/TypeList.h>
 
 using namespace exercise03;
 
