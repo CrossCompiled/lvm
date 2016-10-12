@@ -2,12 +2,12 @@
 // Created by Kalle Møller on 10/10/2016.
 //
 
-#ifndef LITTLEstaticMACHINE_OPCODES_H
-#define LITTLEstaticMACHINE_OPCODES_H
+#ifndef LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
+#define LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 
 #include <string>
 #include <iostream>
-#include <LittlestaticMachine/LittleShared/opcodes.h>
+#include <LittleVirtualMachine/LittleShared/opcodes.h>
 #include <stack>
 #include <unordered_map>
 #include <stdexcept>
@@ -27,7 +27,7 @@ namespace lvm {
         template<typename T>
         class In : public shared::In {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.push('a'); //Missing cin
             };
         };
@@ -35,7 +35,7 @@ namespace lvm {
         template<typename T>
         class Out : public lvm::shared::Out {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 std::cout << static_cast<char>(system.stack.top());
                 system.stack.pop();
             };
@@ -44,7 +44,7 @@ namespace lvm {
         template<typename T>
         class Add : public lvm::shared::Add {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 system.stack.top() += a;
@@ -54,7 +54,7 @@ namespace lvm {
         template<typename T>
         class Sub : public shared::Sub {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 system.stack.top() -= a;
@@ -64,7 +64,7 @@ namespace lvm {
         template<typename T>
         class Mul : public shared::Mul {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 system.stack.top() *= a;
@@ -74,7 +74,7 @@ namespace lvm {
         template<typename T>
         class Div : public shared::Div {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 system.stack.top() /= a;
@@ -84,7 +84,7 @@ namespace lvm {
         template<typename T>
         class Mod : public shared::Mod {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 system.stack.top() %= a;
@@ -94,7 +94,7 @@ namespace lvm {
         template<typename T>
         class Neg : public shared::Neg {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.top() = -system.stack.top();
             };
         };
@@ -102,7 +102,7 @@ namespace lvm {
         template<typename T>
         class Inc : public shared::Inc {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.top() = ++system.stack.top();
             };
         };
@@ -110,7 +110,7 @@ namespace lvm {
         template<typename T>
         class Dec : public shared::Dec {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.top() = --system.stack.top();
             };
         };
@@ -118,7 +118,7 @@ namespace lvm {
         template<typename T>
         class And : public shared::And {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top;
                 system.stack.pop();
                 system.stack.top() &= a;
@@ -128,7 +128,7 @@ namespace lvm {
         template<typename T>
         class Or : public shared::Or {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top;
                 system.stack.pop();
                 system.stack.top() |= a;
@@ -138,7 +138,7 @@ namespace lvm {
         template<typename T>
         class Not : public shared::Not {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.top() = !system.stack.top();
             };
         };
@@ -146,7 +146,7 @@ namespace lvm {
         template<typename T>
         class Xor : public shared::Xor {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top;
                 system.stack.pop();
                 system.stack.top() ^= a;
@@ -156,7 +156,7 @@ namespace lvm {
         template<typename T>
         class ShiftLeft : public shared::ShiftLeft {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top;
                 system.stack.pop();
                 system.stack.top() <<= a;
@@ -166,7 +166,7 @@ namespace lvm {
         template<typename T>
         class ShiftRight : public shared::ShiftRight {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top;
                 system.stack.pop();
                 system.stack.top() >>= a;
@@ -176,7 +176,7 @@ namespace lvm {
         template<typename T>
         class Pop : public shared::Pop {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.pop();
             };
         };
@@ -184,7 +184,7 @@ namespace lvm {
         template<typename T>
         class Duplicate : public shared::Duplicate {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.push(system.stack.top());
             };
         };
@@ -192,7 +192,7 @@ namespace lvm {
         template<typename T>
         class Swap : public shared::Swap {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 std::swap(system.stack.top(), a);
@@ -203,7 +203,7 @@ namespace lvm {
         template<typename T>
         class CopyOver : public shared::CopyOver {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto a = system.stack.top();
                 system.stack.pop();
                 auto b = system.stack.top();
@@ -215,7 +215,7 @@ namespace lvm {
         template<typename T>
         class Load : public shared::Load {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.stack.top() = system.memory[system.stack.top()];
             };
         };
@@ -223,7 +223,7 @@ namespace lvm {
         template<typename T>
         class Store : public shared::Store {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 system.memory[location] = system.stack.top();
@@ -234,7 +234,7 @@ namespace lvm {
         template<typename T>
         class Jump : public shared::Jump {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.program_ptr = system.stack.top();
                 system.stack.pop();
             };
@@ -243,7 +243,7 @@ namespace lvm {
         template<typename T>
         class JumpEqual : public shared::JumpEqual {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -259,7 +259,7 @@ namespace lvm {
         template<typename T>
         class JumpNotEqual : public shared::JumpNotEqual {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -275,7 +275,7 @@ namespace lvm {
         template<typename T>
         class JumpGreater : public shared::JumpGreater {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -291,7 +291,7 @@ namespace lvm {
         template<typename T>
         class JumpGreaterEqual : public shared::JumpGreaterEqual {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -306,7 +306,7 @@ namespace lvm {
 
         template<typename T>
         class JumpLesser : public shared::JumpLesser {
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -322,7 +322,7 @@ namespace lvm {
         template<typename T>
         class JumpLesserEqual : public shared::JumpLesserEqual {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 auto location = system.stack.top();
                 system.stack.pop();
                 auto a = system.stack.top();
@@ -338,13 +338,13 @@ namespace lvm {
         template<typename T>
         class Nop : public shared::Nop {
         public:
-            static void operator()(T &system) {};
+            static void execute(T &system) {};
         };
 
         template<typename T>
         class Halt : public shared::Halt {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 system.running = false;
             };
         };
@@ -352,7 +352,7 @@ namespace lvm {
         template<typename T>
         class Push : public lvm::shared::Push {
         public:
-            static void operator()(T &system) {
+            static void execute(T &system) {
                 ++system.program_ptr;
                 system.stack.push(system.program[system.program_ptr]);
             };
@@ -363,4 +363,4 @@ namespace lvm {
 }
 
 
-#endif //LITTLEstaticMACHINE_OPCODES_H
+#endif //LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
