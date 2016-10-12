@@ -9,188 +9,200 @@ namespace lvm {
     namespace shared {
         class BaseOpcode {
         public:
-            static const uint8_t code;
-            static const std::string name;
+            static constexpr const int code = 0;
+            static constexpr const char* name = 0;
         };
 
         class In : BaseOpcode {
         public:
-            static const uint8_t code =0x00;
-            static const std::string name = "IN";
+            static constexpr const int code =0x00;
+            static constexpr const char* name = "IN";
         };
 
         class Out : BaseOpcode {
         public:
-            static const uint8_t code =0x01;
-            static const std::string name = "OUT";
+            static constexpr const int code =0x01;
+            static constexpr const char* name = "OUT";
         };
 
         class Add : BaseOpcode {
         public:
-            static const uint8_t code = 0x02;
-            static const std::string name = "ADD";
+            static constexpr const int code = 0x02;
+            static constexpr const char* name = "ADD";
         };
 
         class Sub : BaseOpcode {
         public:
-            static const uint8_t code = 0x03;
-            static const std::string name = "SUB";
+            static constexpr const int code = 0x03;
+            static constexpr const char* name = "SUB";
         };
 
         class Mul : BaseOpcode{
         public:
-            static const uint8_t code = 0x04;
-            static const std::string name = "MUL";
+            static constexpr const int code = 0x04;
+            static constexpr const char* name = "MUL";
         };
 
         class Div : BaseOpcode{
         public:
-            static const uint8_t code = 0x05;
-            static const std::string name = "DIV";
+            static constexpr const int code = 0x05;
+            static constexpr const char* name = "DIV";
         };
 
         class Mod : BaseOpcode{
         public:
-            static const uint8_t code = 0x06;
-            static const std::string name = "Mod";
+            static constexpr const int code = 0x06;
+            static constexpr const char* name = "Mod";
         };
 
         class Neg : BaseOpcode{
         public:
-            static const uint8_t code = 0x07;
-            static const std::string name = "NEG";
+            static constexpr const int code = 0x07;
+            static constexpr const char* name = "NEG";
         };
 
         class Inc : BaseOpcode{
         public:
-            static const uint8_t code = 0x08;
-            static const std::string name = "INC";
+            static constexpr const int code = 0x08;
+            static constexpr const char* name = "INC";
         };
 
         class Dec : BaseOpcode{
         public:
-            static const uint8_t code = 0x09;
-            static const std::string name = "DEC";
+            static constexpr const int code = 0x09;
+            static constexpr const char* name = "DEC";
         };
 
         class And : BaseOpcode{
         public:
-            static const uint8_t code = 0x0A;
-            static const std::string name = "AND";
+            static constexpr const int code = 0x0A;
+            static constexpr const char* name = "AND";
         };
 
         class Or : BaseOpcode{
         public:
-            static const uint8_t code = 0x0B;
-            static const std::string name = "OR";
+            static constexpr const int code = 0x0B;
+            static constexpr const char* name = "OR";
         };
 
         class Not : BaseOpcode{
         public:
-            static const uint8_t code = 0x0C;
-            static const std::string name = "NOT";
+            static constexpr const int code = 0x0C;
+            static constexpr const char* name = "NOT";
         };
 
         class Xor : BaseOpcode{
         public:
-            static const uint8_t code = 0x0D;
-            static const std::string name = "XOR";
+            static constexpr const int code = 0x0D;
+            static constexpr const char* name = "XOR";
         };
 
-        class Shl : BaseOpcode{
+        class ShiftLeft : BaseOpcode{
         public:
-            static cMulonst uint8_t code = 0x0E;
-            static const std::string name = "SHL";
+            static constexpr const int code = 0x0E;
+            static constexpr const char* name = "SHL";
         };
 
-        class Shr : BaseOpcode{
+        class ShiftRight : BaseOpcode{
         public:
-            static const uint8_t code = 0x0F;
-            static const std::string name = "SHR";
+            static constexpr const int code = 0x0F;
+            static constexpr const char* name = "SHR";
         };
 
         class Pop : BaseOpcode{
         public:
-            static const uint8_t code = 0x10;
-            static const std::string name = "POP";
+            static constexpr const int code = 0x10;
+            static constexpr const char* name = "POP";
         };
 
-        class Dup : BaseOpcode{
+        class Duplicate : BaseOpcode{
         public:
-            static const uint8_t code = 0x11;
-            static const std::string name = "DUP";
+            static constexpr const int code = 0x11;
+            static constexpr const char* name = "DUP";
         };
 
-        class Swp : BaseOpcode{
+        class Swap : BaseOpcode{
         public:
-            static const uint8_t code = 0x12;
-            static const std::string name = "SWP";
+            static constexpr const int code = 0x12;
+            static constexpr const char* name = "SWP";
         };
 
-        class Ovr : BaseOpcode{
+        class CopyOver : BaseOpcode{
         public:
-            static const uint8_t code = 0x13;
-            static const std::string name = "OVR";
+            static constexpr const int code = 0x13;
+            static constexpr const char* name = "OVR";
         };
 
         class Load : BaseOpcode{
         public:
-            static const uint8_t code = 0x14;
-            static const std::string name = "LOAD";
+            static constexpr const int code = 0x14;
+            static constexpr const char* name = "LOAD";
         };
 
-        class Stor : BaseOpcode{
+        class Store : BaseOpcode{
         public:
-            static const uint8_t code = 0x15;
-            static const std::string name = "STOR";
+            static constexpr const int code = 0x15;
+            static constexpr const char* name = "STOR";
         };
 
-        class Jmp : BaseOpcode{
+        class Jump : BaseOpcode{
         public:
-            static const uint8_t code = 0x16;
-            static const std::string name = "JMP";
+            static constexpr const int code = 0x16;
+            static constexpr const char* name = "JMP";
         };
 
-        class Je : BaseOpcode{
+        class JumpEqual : BaseOpcode{
         public:
-            static const uint8_t code = 0x17;
-            static const std::string name = "JE";
+            static constexpr const int code = 0x17;
+            static constexpr const char* name = "JE";
         };
 
-        class Jne : BaseOpcode{
+        class JumpNotEqual : BaseOpcode{
         public:
-            static const uint8_t code = 0x18;
-            static const std::string name = "JNE";
+            static constexpr const int code = 0x18;
+            static constexpr const char* name = "JNE";
         };
 
-        class Jg : BaseOpcode{
+        class JumpGreater : BaseOpcode{
         public:
-            static const uint8_t code = 0x19;
-            static const std::string name = "JG";
+            static constexpr const int code = 0x19;
+            static constexpr const char* name = "JG";
         };
 
-        class Jl : BaseOpcode{
+        class JumpGreaterEqual : BaseOpcode{
         public:
-            static const uint8_t code = 0x1A;
-            static const std::string name = "JL";
+            static constexpr const int code = 0x1A;
+            static constexpr const char* name = "JG";
         };
 
-        class Jle : BaseOpcode{
+        class JumpLesser : BaseOpcode{
         public:
-            static const uint8_t code = 0x1B;
-            static const std::string name = "JLE";
+            static constexpr const int code = 0x1B;
+            static constexpr const char* name = "JL";
+        };
+
+        class JumpLesserEqual : BaseOpcode{
+        public:
+            static constexpr const int code = 0x1C;
+            static constexpr const char* name = "JLE";
         };
 
         class Nop : BaseOpcode{
         public:
-            static const uint8_t code = 0x1C;
-            static const std::string name = "NOP";
+            static constexpr const int code = 0x1D;
+            static constexpr const char* name = "NOP";
         };
 
         class Halt : BaseOpcode{
         public:
-            static const uint8_t code = 0x1D;
-            static const std::string name = "HALT";
+            static constexpr const int code = 0x1E;
+            static constexpr const char* name = "HALT";
+        };
+
+        class Push : BaseOpcode{
+        public:
+            static constexpr const int code = 0x1F;
+            static constexpr const char* name = "PUSH";
         };
     }
 }
