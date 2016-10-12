@@ -5,4 +5,33 @@
 #ifndef LITTLEVIRTUALMACHINE_SUPPORTEDTYPES_H
 #define LITTLEVIRTUALMACHINE_SUPPORTEDTYPES_H
 
+#include <LittleVirtualMachine/LittleShared/opcodes.h>
+#include <LittleVirtualMachine/LittleShared/TypeList.h>
+
+namespace lvm {
+    namespace shared {
+
+        typedef MakeTypeList<In, Out, Add>::List SupportedOpcodes;
+
+        template <typename TL>
+        struct MakeOpcodeMap{
+
+            static void run(std::map<std::string, int> & innerMap){
+                innerMap.insert(std::pair<std::string, int>(std::string(TL::First::name), static_cast<int>(TL::First::code)));
+                OpcodeMap<typename TL::Left>::run(innerMap);
+            }
+        };
+
+        template <>
+        struct MakeOpcodeMap<NullType>{
+
+            static void run(std::map<std::string, int> innerMap)
+            {
+            }
+        };
+    }
+}
+
+
+
 #endif //LITTLEVIRTUALMACHINE_SUPPORTEDTYPES_H
