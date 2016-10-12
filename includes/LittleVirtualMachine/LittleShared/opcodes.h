@@ -9,19 +9,32 @@ namespace lvm {
     namespace shared {
         class BaseOpcode {
         public:
+<<<<<<< HEAD
             static constexpr const int code = 0;
             static constexpr const char* name = 0;
+=======
+            static constexpr const int code = 0xFF;
+            static constexpr const char* name = "";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
 
         class In : BaseOpcode {
         public:
+<<<<<<< HEAD
             static constexpr const int code =0x00;
+=======
+            static constexpr const int code = 0x00;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "IN";
         };
 
         class Out : BaseOpcode {
         public:
+<<<<<<< HEAD
             static constexpr const int code =0x01;
+=======
+            static constexpr const int code = 0x01;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "OUT";
         };
 
@@ -135,7 +148,11 @@ namespace lvm {
 
         class Load : BaseOpcode{
         public:
+<<<<<<< HEAD
             static constexpr const int code = 0x14;
+=======
+            static const uint8_t code = 0x14;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "LOAD";
         };
 
@@ -167,22 +184,39 @@ namespace lvm {
         public:
             static constexpr const int code = 0x19;
             static constexpr const char* name = "JG";
+<<<<<<< HEAD
+=======
+        };
+
+        class Jge : BaseOpcode{
+        public:
+            static constexpr const int code = 0x1A;
+            static constexpr const char* name = "JGE";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
 
         class JumpGreaterEqual : BaseOpcode{
         public:
+<<<<<<< HEAD
             static constexpr const int code = 0x1A;
             static constexpr const char* name = "JG";
+=======
+            static constexpr const int code = 0x1B;
+            static constexpr const char* name = "JL";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
 
         class JumpLesser : BaseOpcode{
         public:
+<<<<<<< HEAD
             static constexpr const int code = 0x1B;
             static constexpr const char* name = "JL";
         };
 
         class JumpLesserEqual : BaseOpcode{
         public:
+=======
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const int code = 0x1C;
             static constexpr const char* name = "JLE";
         };
@@ -197,12 +231,15 @@ namespace lvm {
         public:
             static constexpr const int code = 0x1E;
             static constexpr const char* name = "HALT";
+<<<<<<< HEAD
         };
 
         class Push : BaseOpcode{
         public:
             static constexpr const int code = 0x1F;
             static constexpr const char* name = "PUSH";
+=======
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
     }
 }

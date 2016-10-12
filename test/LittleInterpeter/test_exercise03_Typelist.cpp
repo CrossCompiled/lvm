@@ -5,8 +5,11 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <LittleVirtualMachine/LittleShared/TypeList.h>
+#include <LittleVirtualMachine/LittleShared/SupportedTypes.h>
+#include <LittleVirtualMachine/LittleShared/opcodes.h>
 
-using namespace exercise03;
+
+using namespace lvm::shared;
 
 //region CompareFunction
 
@@ -18,30 +21,30 @@ protected:
 
 TEST_F (TypeListTest, OneType)
 {
-    typedef TYPELIST_1(int) IntTL;
+    typedef MakeTypeList<int> IntTL;
 
     auto size = sizeof(int);
-    auto tlSize = sizeof(IntTL::First);
+    auto tlSize = sizeof(IntTL::List::First);
 
     EXPECT_EQ(size, tlSize);
 }
 
 TEST_F (TypeListTest, MixTypeList)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
     auto size = sizeof(int);
-    auto tlSize = sizeof(MixTL::Left::First);
+    auto tlSize = sizeof(MixTL::List::Left::First);
 
     EXPECT_EQ(size, tlSize);
 }
 
 TEST_F (TypeListTest, MixTypeListShort)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
     auto size = sizeof(short);
-    auto tlSize = sizeof(MixTL::Left::Left::Left::First);
+    auto tlSize = sizeof(MixTL::List::Left::Left::Left::First);
 
     EXPECT_EQ(size, tlSize);
 }
@@ -60,9 +63,9 @@ TEST_F (TypeListTest, IsSameNotTrue)
 
 TEST_F (TypeListTest, Contains)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
-    auto IGotIt = Contains<MixTL, short>::value;
+    auto IGotIt = Contains<MixTL::List, short>::value;
 
 
     EXPECT_EQ(true, IGotIt);
@@ -70,36 +73,46 @@ TEST_F (TypeListTest, Contains)
 
 TEST_F (TypeListTest, AtIndex)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
-    auto TypeChecker = IsSame<typename AtIndex<MixTL, 1>::type, int>::value;
+    auto TypeChecker = IsSame<typename AtIndex<MixTL::List, 1>::type, int>::value;
 
     EXPECT_EQ(true, TypeChecker);
 }
 
 TEST_F (TypeListTest, PrintIt)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
-    auto printed = PrintIt<MixTL>::value();
+    auto printed = PrintIt<MixTL::List>::value();
 
     EXPECT_EQ("c i l s ", printed);
 }
 
 TEST_F (TypeListTest, Remove)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
-    auto IGotIt = Contains<Remove<MixTL, short>::type, short>::value;
+    auto IGotIt = Contains<Remove<MixTL::List, short>::type, short>::value;
 
     EXPECT_EQ(false, IGotIt);
 }
 
 TEST_F (TypeListTest, RemovePartDuex)
 {
-    typedef TYPELIST_4(char , int , long , short ) MixTL;
+    typedef MakeTypeList<char , int , long , short> MixTL;
 
-    auto IGotIt = Contains<Remove<MixTL, long>::type, short>::value;
+    auto IGotIt = Contains<Remove<MixTL::List, long>::type, short>::value;
 
     EXPECT_EQ(true, IGotIt);
+}
+
+TEST_F (TypeListTest, Opcodemap)
+{
+    std::map<std::string, int> codes;
+    MakeOpcodeMap<SupportedOpcodes>::run(codes);
+
+    EXPECT_EQ(codes["IN"], 0x00);
+    EXPECT_EQ(codes["OUT"], 0x01);
+    EXPECT_EQ(codes["ADD"], 0x02);
 }
