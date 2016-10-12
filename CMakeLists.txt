@@ -21,6 +21,10 @@ target_include_directories(${LECTURE} INTERFACE includes)
 # LittleCompiler
 add_executable(LittleCompiler src/LittleCompiler/main.cpp)
 target_link_libraries(LittleCompiler ${LECTURE})
+set_target_properties(LittleCompiler PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        )
 
 set_target_properties(LittleCompiler PROPERTIES
         CXX_STANDARD 11
@@ -29,6 +33,10 @@ set_target_properties(LittleCompiler PROPERTIES
 # LittleInterpreter
 add_executable(LittleInterpreter src/LittleInterpreter/main.cpp)
 target_link_libraries(LittleInterpreter ${LECTURE})
+set_target_properties(LittleInterpreter PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        )
 
 set_target_properties(LittleInterpreter PROPERTIES
         CXX_STANDARD 11

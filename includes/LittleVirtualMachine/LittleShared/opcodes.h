@@ -9,19 +9,32 @@ namespace lvm {
     namespace shared {
         class BaseOpcode {
         public:
+<<<<<<< HEAD
+            static constexpr const int code = 0;
+            static constexpr const char* name = 0;
+=======
             static constexpr const int code = 0xFF;
             static constexpr const char* name = "";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
 
         class In : BaseOpcode {
         public:
+<<<<<<< HEAD
+            static constexpr const int code =0x00;
+=======
             static constexpr const int code = 0x00;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "IN";
         };
 
         class Out : BaseOpcode {
         public:
+<<<<<<< HEAD
+            static constexpr const int code =0x01;
+=======
             static constexpr const int code = 0x01;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "OUT";
         };
 
@@ -97,13 +110,13 @@ namespace lvm {
             static constexpr const char* name = "XOR";
         };
 
-        class Shl : BaseOpcode{
+        class ShiftLeft : BaseOpcode{
         public:
             static constexpr const int code = 0x0E;
             static constexpr const char* name = "SHL";
         };
 
-        class Shr : BaseOpcode{
+        class ShiftRight : BaseOpcode{
         public:
             static constexpr const int code = 0x0F;
             static constexpr const char* name = "SHR";
@@ -115,19 +128,19 @@ namespace lvm {
             static constexpr const char* name = "POP";
         };
 
-        class Dup : BaseOpcode{
+        class Duplicate : BaseOpcode{
         public:
             static constexpr const int code = 0x11;
             static constexpr const char* name = "DUP";
         };
 
-        class Swp : BaseOpcode{
+        class Swap : BaseOpcode{
         public:
             static constexpr const int code = 0x12;
             static constexpr const char* name = "SWP";
         };
 
-        class Ovr : BaseOpcode{
+        class CopyOver : BaseOpcode{
         public:
             static constexpr const int code = 0x13;
             static constexpr const char* name = "OVR";
@@ -135,54 +148,75 @@ namespace lvm {
 
         class Load : BaseOpcode{
         public:
+<<<<<<< HEAD
+            static constexpr const int code = 0x14;
+=======
             static const uint8_t code = 0x14;
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const char* name = "LOAD";
         };
 
-        class Stor : BaseOpcode{
+        class Store : BaseOpcode{
         public:
             static constexpr const int code = 0x15;
             static constexpr const char* name = "STOR";
         };
 
-        class Jmp : BaseOpcode{
+        class Jump : BaseOpcode{
         public:
             static constexpr const int code = 0x16;
             static constexpr const char* name = "JMP";
         };
 
-        class Je : BaseOpcode{
+        class JumpEqual : BaseOpcode{
         public:
             static constexpr const int code = 0x17;
             static constexpr const char* name = "JE";
         };
 
-        class Jne : BaseOpcode{
+        class JumpNotEqual : BaseOpcode{
         public:
             static constexpr const int code = 0x18;
             static constexpr const char* name = "JNE";
         };
 
-        class Jg : BaseOpcode{
+        class JumpGreater : BaseOpcode{
         public:
             static constexpr const int code = 0x19;
             static constexpr const char* name = "JG";
+<<<<<<< HEAD
+=======
         };
 
         class Jge : BaseOpcode{
         public:
             static constexpr const int code = 0x1A;
             static constexpr const char* name = "JGE";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
 
-        class Jl : BaseOpcode{
+        class JumpGreaterEqual : BaseOpcode{
         public:
+<<<<<<< HEAD
+            static constexpr const int code = 0x1A;
+            static constexpr const char* name = "JG";
+=======
+            static constexpr const int code = 0x1B;
+            static constexpr const char* name = "JL";
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
+        };
+
+        class JumpLesser : BaseOpcode{
+        public:
+<<<<<<< HEAD
             static constexpr const int code = 0x1B;
             static constexpr const char* name = "JL";
         };
 
-        class Jle : BaseOpcode{
+        class JumpLesserEqual : BaseOpcode{
         public:
+=======
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
             static constexpr const int code = 0x1C;
             static constexpr const char* name = "JLE";
         };
@@ -197,6 +231,15 @@ namespace lvm {
         public:
             static constexpr const int code = 0x1E;
             static constexpr const char* name = "HALT";
+<<<<<<< HEAD
+        };
+
+        class Push : BaseOpcode{
+        public:
+            static constexpr const int code = 0x1F;
+            static constexpr const char* name = "PUSH";
+=======
+>>>>>>> df412f8ce8a21e3428e9ae36706540ccb68e4ecd
         };
     }
 }
