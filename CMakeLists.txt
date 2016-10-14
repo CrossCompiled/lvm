@@ -52,6 +52,7 @@ find_package(GTest REQUIRED)
 set(LTESTS
         test/LittleCompiler/test_exercise02_binaru.cpp
         test/LittleInterpeter/test_exercise03_Typelist.cpp
+        test/LittleCompiler/test_compiler_states.cpp
         )
 
 foreach(testfile ${LTESTS})
