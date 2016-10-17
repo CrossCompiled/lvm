@@ -109,7 +109,7 @@ TEST_F (TypeListTest, RemovePartDuex)
 
 TEST_F (TypeListTest, Opcodemap)
 {
-    std::map<std::string, int> codes;
+    std::map<std::string, const int> codes;
     MakeOpcodeMap<SupportedOpcodes>::run(codes);
 
     EXPECT_EQ(codes["IN"], 0x00);

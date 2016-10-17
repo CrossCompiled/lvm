@@ -16,16 +16,16 @@ namespace lvm {
         template <typename TL>
         struct MakeOpcodeMap{
 
-            static void run(std::map<std::string, int> & innerMap){
-                innerMap.insert(std::pair<std::string, int>(std::string(TL::First::name), static_cast<int>(TL::First::code)));
-                OpcodeMap<typename TL::Left>::run(innerMap);
+            static void run(std::map<std::string, const int> & innerMap){
+                innerMap.insert(std::pair<std::string, const int>(std::string(TL::First::name), TL::First::code));
+                MakeOpcodeMap<typename TL::Left>::run(innerMap);
             }
         };
 
         template <>
         struct MakeOpcodeMap<NullType>{
 
-            static void run(std::map<std::string, int> innerMap)
+            static void run(std::map<std::string, const int> innerMap)
             {
             }
         };
