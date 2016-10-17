@@ -16,19 +16,19 @@
 
 namespace sc = boost::statechart;
 
-/*
- * Events
- */
-
 namespace lvm {
 	namespace compiler {
-		struct LoadFileEvent : sc::event<LoadFileEvent> {
-			LoadFileEvent(std::string path) : path_(path) {}
+		/*
+		 * Events
+		 */
 
-			std::string get_path() const { return path_; }
+		struct LoadFileEvent : sc::event<LoadFileEvent> {
+			LoadFileEvent(std::istream* input) : input_(input) {}
+
+			std::istream* get_stream() const { return input_; }
 
 		private:
-			std::string path_;
+			std::istream* input_;
 		};
 
 		struct ProcessCharEvent : sc::event<ProcessCharEvent> {
@@ -47,7 +47,7 @@ namespace lvm {
 		struct Failed;
 
 		struct Compiler : sc::state_machine<Compiler, Initial> {
-			std::fstream fileStream;
+			std::istream* input;
 			std::vector<std::string> instructions;
 		};
 
@@ -59,12 +59,9 @@ namespace lvm {
 			typedef boost::mpl::list<sc::custom_reaction<LoadFileEvent>, sc::custom_reaction<sc::exception_thrown>> reactions;
 
 			sc::result react(const LoadFileEvent& ev) {
-				std::string path = ev.get_path();
+				if (!ev.get_stream()->good()) { throw std::exception(); }
 
-				if (path.empty()) { throw std::exception(); }
-
-				context<Compiler>().fileStream.open(path.c_str(), std::ios_base::in);
-				if (!context<Compiler>().fileStream.good()) { throw std::exception(); }
+				context<Compiler>().input = ev.get_stream();
 
 				return transit<Parsing>();
 			}
@@ -74,7 +71,7 @@ namespace lvm {
 					throw;
 				}
 				catch (const std::exception&) {
-					transit<Failed>();
+					return transit<Failed>();
 				}
 				catch (...) {
 					return forward_event();
@@ -88,8 +85,6 @@ namespace lvm {
 
 		struct Failed : sc::simple_state<Failed, Compiler> {
 			Failed() {}
-
-			~Failed() {}
 		};
 
 		/*
@@ -97,9 +92,10 @@ namespace lvm {
 		 */
 
 		struct NewLine;
-		struct Alphanumeric;
+		struct Letter;
 		struct Number;
 		struct Label;
+		struct String;
 		struct EndOfFile;
 		struct Comment;
 
@@ -111,7 +107,7 @@ namespace lvm {
 					throw;
 				}
 				catch (const std::exception&) {
-					transit<Initial>();
+					return transit<Initial>();
 				}
 				catch (...) {
 					return forward_event();
@@ -123,39 +119,41 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int first = context<Compiler>().fileStream.peek();
+				int first = context<Compiler>().input->peek();
 
-				if (std::isalnum(first)) {
+				if (std::isalpha(first)) {
 					context<Compiler>().instructions.push_back("");
-					return transit<Alphanumeric>();
-				} else if (std::isdigit(first)) {
+					return transit<Letter>();
+				}
+
+				if (std::isdigit(first)) {
 					context<Compiler>().instructions.push_back("");
 					return transit<Number>();
-				} else if (first == ':' || first == '@') {
-					return transit<Label>();
-				} else if (first == EOF) {
-					return transit<EndOfFile>();
-				} else if (first == ';') {
-					return transit<Comment>();
-				} else {
-					throw std::exception();
 				}
+
+				if (first == ':' || first == '@') { return transit<Label>(); }
+				if (first == ';') { return transit<Comment>(); }
+				if (first == '"') {return transit<String>(); }
+				if (first == EOF) { return transit<EndOfFile>(); }
+
+				throw std::exception();
 			}
 		};
 
-		struct Alphanumeric : sc::simple_state<Alphanumeric, Parsing> {
+		struct Letter : sc::simple_state<Letter, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().fileStream.get();
+				int read = context<Compiler>().input->get();
 
-				if (std::isalnum(read)) {
+				if (std::isalpha(read)) {
 					context<Compiler>().instructions.back().append(1, read);
+					return discard_event();
 				} else if (std::isspace(read)) {
-					// Check OPCode
-				} else if (read == '\n') {
-					transit<NewLine>();
+					return transit<NewLine>();
 				}
+
+				return discard_event();
 			}
 		};
 
@@ -163,15 +161,16 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().fileStream.get();
+				int read = context<Compiler>().input->get();
 
 				if (std::isdigit(read)) {
 					context<Compiler>().instructions.back().append(1, read);
+					return discard_event();
 				} else if (std::isspace(read)) {
-					// Check OPCode
-				} else if (read == '\n') {
-					transit<NewLine>();
+					return transit<NewLine>();
 				}
+
+				return discard_event();
 			}
 		};
 
@@ -179,24 +178,39 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
+				return discard_event();
+			}
+		};
 
+		struct String : sc::simple_state<String, Parsing> {
+			typedef sc::custom_reaction<ProcessCharEvent> reactions;
+			sc::result react(const ProcessCharEvent&) {
+				int read = context<Compiler>().input->get();
+				if (read == '\n') {
+					return transit<NewLine>();
+				}
+
+				context<Compiler>().instructions.back().append(1, read);
+				return discard_event();
 			}
 		};
 
 		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
-			EndOfFile() {
-				context<Compiler>().fileStream.close();
-			}
+			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
+
+			EndOfFile() {}
 		};
 
 		struct Comment : sc::simple_state<Comment, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().fileStream.get();
+				int read = context<Compiler>().input->get();
 				if (read == '\n') {
-					transit<NewLine>();
+					return transit<NewLine>();
 				}
+
+				return discard_event();
 			}
 		};
 
