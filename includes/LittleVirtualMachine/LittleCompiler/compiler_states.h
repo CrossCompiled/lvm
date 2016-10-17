@@ -3,7 +3,8 @@
 
 #include <string>
 #include <exception>
-#include <fstream>
+#include <istream>
+#include <ostream>
 #include <vector>
 
 #include <boost/statechart/state_machine.hpp>
@@ -14,7 +15,12 @@
 #include <boost/statechart/shallow_history.hpp>
 #include <boost/statechart/exception_translator.hpp>
 
+#include <boost/mpl/list.hpp>
+
+#include "LittleVirtualMachine/LittleCompiler/ICodeGenerator.h"
+
 namespace sc = boost::statechart;
+namespace mpl = boost::mpl;
 
 namespace lvm {
 	namespace compiler {
@@ -24,7 +30,6 @@ namespace lvm {
 
 		struct LoadFileEvent : sc::event<LoadFileEvent> {
 			LoadFileEvent(std::istream* input) : input_(input) {}
-
 			std::istream* get_stream() const { return input_; }
 
 		private:
@@ -35,6 +40,11 @@ namespace lvm {
 		};
 
 		struct WriteByteCodeEvent : sc::event<WriteByteCodeEvent> {
+			WriteByteCodeEvent(std::ostream* output) : output_(output) {}
+			std::ostream* get_stream() const { return output_; }
+
+		private:
+			std::ostream* output_;
 		};
 
 		/*
@@ -46,9 +56,11 @@ namespace lvm {
 		struct WriteByteCode;
 		struct Failed;
 
-		struct Compiler : sc::state_machine<Compiler, Initial> {
+		struct Compiler : sc::state_machine<Compiler, Initial, std::allocator<void>, sc::exception_translator<>> {
+			Compiler(lvm::compiler::ICodeGenerator* generator) : generator_(generator) {}
+
 			std::istream* input;
-			std::vector<std::string> instructions;
+			lvm::compiler::ICodeGenerator* generator_;
 		};
 
 		/*
@@ -56,10 +68,12 @@ namespace lvm {
 		 */
 
 		struct Initial : sc::simple_state<Initial, Compiler> {
-			typedef boost::mpl::list<sc::custom_reaction<LoadFileEvent>, sc::custom_reaction<sc::exception_thrown>> reactions;
+			typedef mpl::list<sc::custom_reaction<sc::exception_thrown>, sc::custom_reaction<LoadFileEvent>> reactions;
 
 			sc::result react(const LoadFileEvent& ev) {
-				if (!ev.get_stream()->good()) { throw std::exception(); }
+				if (!ev.get_stream()->good()) {
+					throw std::exception();
+				}
 
 				context<Compiler>().input = ev.get_stream();
 
@@ -84,7 +98,9 @@ namespace lvm {
 		 */
 
 		struct Failed : sc::simple_state<Failed, Compiler> {
-			Failed() {}
+			Failed() {
+				std::cerr << "Build failed..." << std::endl;
+			}
 		};
 
 		/*
@@ -107,7 +123,7 @@ namespace lvm {
 					throw;
 				}
 				catch (const std::exception&) {
-					return transit<Initial>();
+					return transit<Failed>();
 				}
 				catch (...) {
 					return forward_event();
@@ -121,84 +137,100 @@ namespace lvm {
 			sc::result react(const ProcessCharEvent&) {
 				int first = context<Compiler>().input->peek();
 
-				if (std::isalpha(first)) {
-					context<Compiler>().instructions.push_back("");
-					return transit<Letter>();
+				if (std::isalpha(first)) { return transit<Letter>(); }
+				else if (std::isdigit(first)) { return transit<Number>(); }
+				else if (first == '"') { return transit<String>(); }
+				else if (first == ':' || first == '@') { return transit<Label>(); }
+				else if (first == ';') { return transit<Comment>(); }
+				else if (first == EOF) { return transit<EndOfFile>(); }
+				else if (std::isspace(first)) {
+					context<Compiler>().input->get();
+					return discard_event();
 				}
-
-				if (std::isdigit(first)) {
-					context<Compiler>().instructions.push_back("");
-					return transit<Number>();
+				else {
+					throw std::exception();
 				}
-
-				if (first == ':' || first == '@') { return transit<Label>(); }
-				if (first == ';') { return transit<Comment>(); }
-				if (first == '"') {return transit<String>(); }
-				if (first == EOF) { return transit<EndOfFile>(); }
-
-				throw std::exception();
 			}
 		};
 
 		struct Letter : sc::simple_state<Letter, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
-
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().input->get();
 
 				if (std::isalpha(read)) {
-					context<Compiler>().instructions.back().append(1, read);
+					buffer.put(read);
 					return discard_event();
 				} else if (std::isspace(read)) {
+					// Call Code Generator -- TOUPPER
 					return transit<NewLine>();
 				}
 
 				return discard_event();
 			}
+
+		private:
+			std::stringstream buffer;
 		};
 
 		struct Number : sc::simple_state<Number, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
-
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().input->get();
 
 				if (std::isdigit(read)) {
-					context<Compiler>().instructions.back().append(1, read);
+					buffer.put(read);
 					return discard_event();
 				} else if (std::isspace(read)) {
+					// Call Code Generator
 					return transit<NewLine>();
 				}
 
 				return discard_event();
 			}
+
+		private:
+			std::stringstream buffer;
 		};
 
 		struct Label : sc::simple_state<Label, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
+				int read = context<Compiler>().input->get();
+
+				if (read == ':' || read == '@') { return transit<Label>(); }
+
 				return discard_event();
 			}
+
+		private:
+			std::stringstream buffer;
 		};
 
 		struct String : sc::simple_state<String, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().input->get();
-				if (read == '\n') {
-					return transit<NewLine>();
+
+				if (read == '"') {
+					delimiter++;
+
+					if (delimiter >= 2) {
+						// CALL COOOOODE GENERATOR
+						return transit<NewLine>();
+					}
+
+					return discard_event();
 				}
 
-				context<Compiler>().instructions.back().append(1, read);
+				buffer.put(read);
 				return discard_event();
 			}
-		};
 
-		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
-			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
-
-			EndOfFile() {}
+		private:
+			int delimiter = 0;
+			std::stringstream buffer;
 		};
 
 		struct Comment : sc::simple_state<Comment, Parsing> {
@@ -214,11 +246,20 @@ namespace lvm {
 			}
 		};
 
+		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
+			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
+		};
+
 		/*
 		 * WritingByteCode state
 		 */
 
 		struct WriteByteCode : sc::simple_state<WriteByteCode, Compiler> {
+			typedef sc::custom_reaction<WriteByteCodeEvent> reactions;
+
+			sc::result react(const WriteByteCodeEvent&) {
+				return discard_event();
+			}
 		};
 	}
 }

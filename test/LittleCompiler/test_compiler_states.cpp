@@ -2,53 +2,50 @@
 #include <gmock/gmock.h>
 #include "LittleVirtualMachine/LittleCompiler/compiler_states.h"
 
+class MockCodeGenerator : public lvm::compiler::ICodeGenerator {
+public:
+	MOCK_METHOD0(GenerateInstruction, void());
+	MOCK_METHOD0(GenerateLabelDef, void());
+	MOCK_METHOD0(GenerateLabelRef, void());
+	MOCK_METHOD0(GeneratePrint, void());
+	MOCK_METHOD0(GenerateStringValue, void());
+	MOCK_METHOD0(GenerateValue, void());
+};
+
 class CompilerStateTest : public ::testing::Test {};
 
 TEST_F(CompilerStateTest, IfGivenStreamIsNotOkay) {
-	lvm::compiler::Compiler uut;
-	uut.initiate();
+	MockCodeGenerator mock;
+	lvm::compiler::Compiler compiler(&mock);
+	compiler.initiate();
 
-	std::stringstream test;
-	test.setstate(std::ios_base::badbit);
+	std::stringstream stream;
+	stream.setstate(std::ios_base::failbit);
+	compiler.process_event(lvm::compiler::LoadFileEvent(&stream));
 
-	uut.process_event(lvm::compiler::LoadFileEvent(&test));
-
-	ASSERT_THAT(uut.instructions.empty(), true);
+	// Assertion????
 }
 
-TEST_F(CompilerStateTest, ValidStream) {
-	lvm::compiler::Compiler uut;
-	uut.initiate();
+TEST_F(CompilerStateTest, InstructionStream) {
+	MockCodeGenerator mock;
+	lvm::compiler::Compiler compiler(&mock);
+	compiler.initiate();
 
-	std::stringstream test;
-	test << "10" << std::endl << "10" << std::endl << "ADD";
+	std::stringstream stream;
+	stream << "10" << std::endl << "10" << std::endl << "ADD" << std::endl;
 
-	uut.process_event(lvm::compiler::LoadFileEvent(&test));
+	compiler.process_event(lvm::compiler::LoadFileEvent(&stream));
 
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
+	EXPECT_CALL(mock, GenerateInstruction()).Times(testing::AtLeast(1));
+}
 
-	ASSERT_THAT(uut.instructions[0], "1");
+TEST_F(CompilerStateTest, StringStream) {
+	MockCodeGenerator mock;
+	lvm::compiler::Compiler compiler(&mock);
+	compiler.initiate();
 
-	uut.process_event(lvm::compiler::ProcessCharEvent());
+	std::stringstream stream;
+	stream << "\"Hello, world\"" << std::endl << "PRINT" << std::endl;
 
-	ASSERT_THAT(uut.instructions[0], "10");
-
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-
-	ASSERT_THAT(uut.instructions[1], "1");
-
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-
-	ASSERT_THAT(uut.instructions[1], "10");
-
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-	uut.process_event(lvm::compiler::ProcessCharEvent());
-
-	ASSERT_THAT(uut.instructions[2], "ADD");
+	compiler.process_event(lvm::compiler::LoadFileEvent(&stream));
 }
