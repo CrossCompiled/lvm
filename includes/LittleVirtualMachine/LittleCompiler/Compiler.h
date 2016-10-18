@@ -155,7 +155,7 @@ namespace lvm {
 					return discard_event();
 				}
 
-				throw ParsingErrorException();
+				throw std::exception();
 			}
 		};
 
