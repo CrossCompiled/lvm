@@ -7,11 +7,12 @@
 
 #include <LittleVirtualMachine/LittleShared/opcodes.h>
 #include <LittleVirtualMachine/LittleShared/TypeList.h>
+#include <map>
 
 namespace lvm {
     namespace shared {
 
-        typedef MakeTypeList<In, Out, Add>::List SupportedOpcodes;
+        typedef MakeTypeList<In, Out, Add, Sub, Mul>::List SupportedOpcodes;
 
         template <typename TL>
         struct MakeOpcodeMap{
