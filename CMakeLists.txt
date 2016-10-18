@@ -15,9 +15,11 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 
 # Libraries
-add_library(${LECTURE}
-        src/LittleCompiler/CodeGenerator.cpp)
+add_library(${LECTURE} src/LittleCompiler/CodeGenerator.cpp)
 target_include_directories(${LECTURE} PUBLIC includes)
+set_target_properties(${LECTURE} PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES)
 
 # LittleCompiler
 add_executable(LittleCompiler src/LittleCompiler/main.cpp)
@@ -56,17 +58,14 @@ foreach(testfile ${LTESTS})
     target_link_libraries(${name} ${GMOCK_MAIN_LIBRARY})
     set_target_properties(${name} PROPERTIES
             CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED YES
-            )
+            CXX_STANDARD_REQUIRED YES)
     if(MSVC)
         set_target_properties(${name} PROPERTIES
-                COMPILE_FLAGS "-MTd"
-                )
+                COMPILE_FLAGS "-MTd")
     else()
         set_target_properties(${name} PROPERTIES
                 COMPILE_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage"
-                LINK_FLAGS "-fprofile-arcs -ftest-coverage"
-                )
+                LINK_FLAGS "-fprofile-arcs -ftest-coverage")
     endif()
     add_test(${name} ${name})
 endforeach()

@@ -1,14 +1,9 @@
-//
-// Created by kaspersk on 9/25/16.
-//
-
 #ifndef LECTURE07_08_TYPELIST_H
 #define LECTURE07_08_TYPELIST_H
 
 #include <typeinfo>
 #include <cstdlib>
 #include <string>
-
 
 namespace lvm {
     namespace shared {
