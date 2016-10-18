@@ -1,7 +1,3 @@
-//
-// Created by kaspersk on 10/17/16.
-//
-
 #ifndef LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H
 #define LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H
 
@@ -43,6 +39,5 @@ namespace lvm{
         };
     }
 }
-
 
 #endif //LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H

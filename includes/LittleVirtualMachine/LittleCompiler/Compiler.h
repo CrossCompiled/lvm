@@ -3,7 +3,8 @@
 
 #include <string>
 #include <exception>
-#include <fstream>
+#include <istream>
+#include <ostream>
 #include <vector>
 
 #include <boost/statechart/state_machine.hpp>
@@ -14,7 +15,13 @@
 #include <boost/statechart/shallow_history.hpp>
 #include <boost/statechart/exception_translator.hpp>
 
+#include <boost/mpl/list.hpp>
+
+#include "LittleVirtualMachine/LittleCompiler/ICodeGenerator.h"
+#include "LittleVirtualMachine/LittleCompiler/CompilerExceptions.h"
+
 namespace sc = boost::statechart;
+namespace mpl = boost::mpl;
 
 namespace lvm {
 	namespace compiler {
@@ -24,7 +31,6 @@ namespace lvm {
 
 		struct LoadFileEvent : sc::event<LoadFileEvent> {
 			LoadFileEvent(std::istream* input) : input_(input) {}
-
 			std::istream* get_stream() const { return input_; }
 
 		private:
@@ -35,6 +41,11 @@ namespace lvm {
 		};
 
 		struct WriteByteCodeEvent : sc::event<WriteByteCodeEvent> {
+			WriteByteCodeEvent(std::ostream* output) : output_(output) {}
+			std::ostream* get_stream() const { return output_; }
+
+		private:
+			std::ostream* output_;
 		};
 
 		/*
@@ -46,9 +57,11 @@ namespace lvm {
 		struct WriteByteCode;
 		struct Failed;
 
-		struct Compiler : sc::state_machine<Compiler, Initial> {
-			std::istream* input;
-			std::vector<std::string> instructions;
+		struct Compiler : sc::state_machine<Compiler, Initial, std::allocator<void>, sc::exception_translator<>> {
+			Compiler(lvm::compiler::ICodeGenerator* generator) : generator_(generator) {}
+
+			std::istream* input_;
+			lvm::compiler::ICodeGenerator* generator_;
 		};
 
 		/*
@@ -56,12 +69,14 @@ namespace lvm {
 		 */
 
 		struct Initial : sc::simple_state<Initial, Compiler> {
-			typedef boost::mpl::list<sc::custom_reaction<LoadFileEvent>, sc::custom_reaction<sc::exception_thrown>> reactions;
+			typedef mpl::list<sc::custom_reaction<sc::exception_thrown>, sc::custom_reaction<LoadFileEvent>> reactions;
 
 			sc::result react(const LoadFileEvent& ev) {
-				if (!ev.get_stream()->good()) { throw std::exception(); }
+				if (!ev.get_stream()->good()) {
+					throw std::exception();
+				}
 
-				context<Compiler>().input = ev.get_stream();
+				context<Compiler>().input_ = ev.get_stream();
 
 				return transit<Parsing>();
 			}
@@ -84,7 +99,9 @@ namespace lvm {
 		 */
 
 		struct Failed : sc::simple_state<Failed, Compiler> {
-			Failed() {}
+			Failed() {
+				std::cerr << "Build failed..." << std::endl;
+			}
 		};
 
 		/*
@@ -92,7 +109,7 @@ namespace lvm {
 		 */
 
 		struct NewLine;
-		struct Letter;
+		struct Instruction;
 		struct Number;
 		struct Label;
 		struct String;
@@ -107,7 +124,7 @@ namespace lvm {
 					throw;
 				}
 				catch (const std::exception&) {
-					return transit<Initial>();
+					return transit<Failed>();
 				}
 				catch (...) {
 					return forward_event();
@@ -119,99 +136,163 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int first = context<Compiler>().input->peek();
+				int first = context<Compiler>().input_->peek();
 
-				if (std::isalpha(first)) {
-					context<Compiler>().instructions.push_back("");
-					return transit<Letter>();
-				}
+				if (std::isalpha(first)) { return transit<Instruction>(); }
 
-				if (std::isdigit(first)) {
-					context<Compiler>().instructions.push_back("");
-					return transit<Number>();
-				}
+				if (std::isdigit(first)) { return transit<Number>(); }
+
+				if (first == '"') { return transit<String>(); }
 
 				if (first == ':' || first == '@') { return transit<Label>(); }
+
 				if (first == ';') { return transit<Comment>(); }
-				if (first == '"') {return transit<String>(); }
+
 				if (first == EOF) { return transit<EndOfFile>(); }
+
+				if (std::isspace(first)) {
+					context<Compiler>().input_->get();
+					return discard_event();
+				}
 
 				throw std::exception();
 			}
 		};
 
-		struct Letter : sc::simple_state<Letter, Parsing> {
+		struct Instruction : sc::simple_state<Instruction, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
-
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
 				if (std::isalpha(read)) {
-					context<Compiler>().instructions.back().append(1, read);
+					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
+					std::transform(buffer.begin(), buffer.end(), buffer.begin(), std::ptr_fun<int, int>(std::toupper));
+
+					if (buffer == "PRINT")
+						context<Compiler>().generator_->GeneratePrint();
+					else
+						context<Compiler>().generator_->GenerateInstruction(buffer);
+
 					return transit<NewLine>();
 				}
 
 				return discard_event();
 			}
+
+		private:
+			std::string buffer;
 		};
 
 		struct Number : sc::simple_state<Number, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
-
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
 				if (std::isdigit(read)) {
-					context<Compiler>().instructions.back().append(1, read);
+					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
+					context<Compiler>().generator_->GenerateValue(buffer);
 					return transit<NewLine>();
 				}
 
 				return discard_event();
 			}
+
+		private:
+			std::string buffer;
 		};
 
 		struct Label : sc::simple_state<Label, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
+				int read = context<Compiler>().input_->get();
+
+				if (read == ':') {
+					type = LabelDef;
+					return discard_event();
+				}
+				else if (read == '@') {
+					type = LabelRef;
+					return discard_event();
+				}
+				else if (std::isspace(read))
+				{
+					switch (type)
+					{
+						case LabelDef:
+							context<Compiler>().generator_->GenerateLabelDef(buffer);
+							return transit<NewLine>();
+						case LabelRef:
+							context<Compiler>().generator_->GenerateLabelRef(buffer);
+							return transit<NewLine>();
+						case Unknown:
+						default:
+							throw std::exception();
+					}
+				}
+				else {
+					buffer += read;
+				}
+
 				return discard_event();
 			}
+
+		private:
+			std::string buffer;
+
+			enum ReferenceType {
+				Unknown,
+				LabelDef,
+				LabelRef
+			};
+
+			ReferenceType type;
 		};
 
 		struct String : sc::simple_state<String, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
-				if (read == '\n') {
-					return transit<NewLine>();
+				int read = context<Compiler>().input_->get();
+
+				if (read == '"') {
+					delimiter++;
+
+					if (delimiter >= 2) {
+						context<Compiler>().generator_->GenerateStringValue(buffer);
+						return transit<NewLine>();
+					}
+
+					return discard_event();
 				}
 
-				context<Compiler>().instructions.back().append(1, read);
+				buffer += read;
 				return discard_event();
 			}
-		};
 
-		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
-			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
-
-			EndOfFile() {}
+		private:
+			int delimiter = 0;
+			std::string buffer;
 		};
 
 		struct Comment : sc::simple_state<Comment, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 				if (read == '\n') {
 					return transit<NewLine>();
 				}
 
 				return discard_event();
 			}
+		};
+
+		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
+			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
 		};
 
 		/*
@@ -219,6 +300,11 @@ namespace lvm {
 		 */
 
 		struct WriteByteCode : sc::simple_state<WriteByteCode, Compiler> {
+			typedef sc::custom_reaction<WriteByteCodeEvent> reactions;
+
+			sc::result react(const WriteByteCodeEvent&) {
+				return discard_event();
+			}
 		};
 	}
 }

@@ -4,7 +4,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries (DLLs)." OFF)
 option(BUILD_GMOCK "Build GMock (GTest will build also)" ON)
 option(BUILD_GTEST "Build GTest" OFF)
 option(gtest_force_shared_crt "Use shared (DLL) run-time lib even when Google Test is built as static lib." OFF)
-option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
+option(gtest_disable_pthreads "Disable uses of pthreads in gtest." OFF)
 
 mark_as_advanced(BUILD_GMOCK)
 mark_as_advanced(BUILD_GTEST)
