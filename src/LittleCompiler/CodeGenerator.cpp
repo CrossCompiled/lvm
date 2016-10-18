@@ -65,8 +65,10 @@ namespace lvm {
                 }
             });
 
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(0);
             std::for_each(stringy.rbegin(), stringy.rend(), [this](std::vector<int>::reference x){
+                code.push_back(OpcodeMap["PUSH"]);
                 code.push_back(x);
             });
         }

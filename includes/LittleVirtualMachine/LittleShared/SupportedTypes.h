@@ -13,7 +13,7 @@ namespace lvm {
     namespace shared {
 
 
-        typedef MakeTypeList<opcodes::In, opcodes::Push, opcodes::Halt, opcodes::Out, opcodes::Add, opcodes::Sub, opcodes::Mul, opcodes::Duplicate, opcodes::JumpEqual, opcodes::Jump, opcodes::Pop, opcodes::Swap, opcodes::Mod, opcodes::CopyOver>::List SupportedOpcodes;
+        typedef MakeTypeList<opcodes::In, opcodes::Push, opcodes::Div, opcodes::Inc, opcodes::Dec, opcodes::Store, opcodes::Load, opcodes::JumpNotEqual, opcodes::Halt, opcodes::Out, opcodes::Add, opcodes::Sub, opcodes::Mul, opcodes::Duplicate, opcodes::JumpEqual, opcodes::Jump, opcodes::Pop, opcodes::Swap, opcodes::Mod, opcodes::CopyOver>::List SupportedOpcodes;
 
         template <typename TL>
         struct MakeOpcodeMap{
