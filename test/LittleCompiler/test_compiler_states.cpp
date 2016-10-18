@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "LittleVirtualMachine/LittleCompiler/compiler_states.h"
+#include "LittleVirtualMachine/LittleCompiler/Compiler.h"
 
 struct MockCodeGenerator : public lvm::compiler::ICodeGenerator {
 	MOCK_METHOD0(GeneratePrint, void());

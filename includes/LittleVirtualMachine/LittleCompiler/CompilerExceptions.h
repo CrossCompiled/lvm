@@ -1,13 +1,10 @@
-//
-// Created by kaspersk on 10/17/16.
-//
-
 #ifndef LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H
 #define LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H
 
 #include <stdexcept>
 #include <string>
 
+<<<<<<< b9ceccc9984cd9f09f561c905a28ba5dfe82fc56
 namespace lvm{
     namespace compiler {
 
@@ -43,6 +40,20 @@ namespace lvm{
         };
     }
 }
+=======
+namespace lvm {
+	namespace compiler {
+		struct CompilerException : std::runtime_error {
+			CompilerException(const std::string& what_error) {}
+		};
 
+		struct WrongOpcode : CompilerException {};
+
+		struct MissingLabel : CompilerException {};
+>>>>>>> Refactoring
+
+		struct ParsingErrorException : CompilerException {};
+	}
+}
 
 #endif //LITTLEVIRTUALMACHINE_COMPILEREXCEPTIONS_H

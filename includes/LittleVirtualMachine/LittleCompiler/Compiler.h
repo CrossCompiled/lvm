@@ -18,6 +18,7 @@
 #include <boost/mpl/list.hpp>
 
 #include "LittleVirtualMachine/LittleCompiler/ICodeGenerator.h"
+#include "LittleVirtualMachine/LittleCompiler/CompilerExceptions.h"
 
 namespace sc = boost::statechart;
 namespace mpl = boost::mpl;
@@ -108,7 +109,7 @@ namespace lvm {
 		 */
 
 		struct NewLine;
-		struct Letter;
+		struct Instruction;
 		struct Number;
 		struct Label;
 		struct String;
@@ -137,23 +138,28 @@ namespace lvm {
 			sc::result react(const ProcessCharEvent&) {
 				int first = context<Compiler>().input_->peek();
 
-				if (std::isalpha(first)) { return transit<Letter>(); }
-				else if (std::isdigit(first)) { return transit<Number>(); }
-				else if (first == '"') { return transit<String>(); }
-				else if (first == ':' || first == '@') { return transit<Label>(); }
-				else if (first == ';') { return transit<Comment>(); }
-				else if (first == EOF) { return transit<EndOfFile>(); }
-				else if (std::isspace(first)) {
+				if (std::isalpha(first)) { return transit<Instruction>(); }
+
+				if (std::isdigit(first)) { return transit<Number>(); }
+
+				if (first == '"') { return transit<String>(); }
+
+				if (first == ':' || first == '@') { return transit<Label>(); }
+
+				if (first == ';') { return transit<Comment>(); }
+
+				if (first == EOF) { return transit<EndOfFile>(); }
+
+				if (std::isspace(first)) {
 					context<Compiler>().input_->get();
 					return discard_event();
 				}
-				else {
-					throw std::exception();
-				}
+
+				throw ParsingErrorException();
 			}
 		};
 
-		struct Letter : sc::simple_state<Letter, Parsing> {
+		struct Instruction : sc::simple_state<Instruction, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().input_->get();
@@ -162,11 +168,9 @@ namespace lvm {
 					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
-					std::string uppercase;
-					for (auto c : buffer)
-						uppercase += std::toupper(c);
+					std::transform(buffer.begin(), buffer.end(), buffer.begin(), std::ptr_fun<int, int>(std::toupper));
 
-					if (uppercase == "PRINT")
+					if (buffer == "PRINT")
 						context<Compiler>().generator_->GeneratePrint();
 					else
 						context<Compiler>().generator_->GenerateInstruction(buffer);
