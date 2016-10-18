@@ -148,7 +148,7 @@ namespace lvm {
 
 				if (first == ';') { return transit<Comment>(); }
 
-				if (first == EOF) { return transit<EndOfFile>(); }
+				if (first == -1) { return transit<EndOfFile>(); }
 
 				if (std::isspace(first)) {
 					context<Compiler>().input_->get();
@@ -292,7 +292,7 @@ namespace lvm {
 		};
 
 		struct EndOfFile : sc::simple_state<EndOfFile, Parsing> {
-			typedef sc::transition<WriteByteCode, WriteByteCode> reactions;
+			typedef sc::transition<WriteByteCodeEvent, WriteByteCode> reactions;
 		};
 
 		/*
@@ -302,8 +302,9 @@ namespace lvm {
 		struct WriteByteCode : sc::simple_state<WriteByteCode, Compiler> {
 			typedef sc::custom_reaction<WriteByteCodeEvent> reactions;
 
-			sc::result react(const WriteByteCodeEvent&) {
-				return discard_event();
+			sc::result react(const WriteByteCodeEvent& e) {
+                context<Compiler>().generator_->OutputCode(e.get_stream());
+				return transit<Initial>();
 			}
 		};
 	}

@@ -31,7 +31,7 @@ namespace lvm {
 
 			void GenerateStringValue(const std::string& string);
 
-			void OutputCode(std::ostream& out);
+			void OutputCode(std::ostream* out);
 
 		private:
 			struct label {

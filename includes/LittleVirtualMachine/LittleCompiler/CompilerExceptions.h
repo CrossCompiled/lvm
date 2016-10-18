@@ -7,35 +7,22 @@
 namespace lvm{
     namespace compiler {
 
-        class CompilerExceptions : std::exception{
-
-        public:
-            explicit CompilerExceptions(const std::string& what_error) : whats_wrong(what_error){
-            }
-
-            virtual const char* what() const throw(){
-                return whats_wrong.c_str();
-            }
-
-        protected:
-            std::string whats_wrong;
+        struct CompilerException : std::runtime_error {
+            explicit CompilerException(const std::string& what_error) : runtime_error(what_error) {}
         };
 
-        class WrongOpcode : CompilerExceptions{
-        public:
-            WrongOpcode(const std::string& what_error) : CompilerExceptions(what_error){}
+        struct WrongOpcode : public CompilerException{
+            WrongOpcode(const std::string& what_error) : CompilerException(what_error){}
         };
 
-        class MissingLabel : CompilerExceptions{
+        struct MissingLabel : public CompilerException{
         public:
-            MissingLabel(const std::string& what_error) : CompilerExceptions(what_error){}
+            MissingLabel(const std::string& what_error) : CompilerException(what_error){}
 
         };
 
-        class DuplicateLabel : CompilerExceptions{
-        public:
-            DuplicateLabel(const std::string& what_error) : CompilerExceptions(what_error){}
-
+        struct DuplicateLabel : public CompilerException{
+            DuplicateLabel(const std::string& what_error) : CompilerException(what_error){}
         };
     }
 }

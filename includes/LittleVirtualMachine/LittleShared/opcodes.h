@@ -52,7 +52,7 @@ namespace lvm {
         class Mod : BaseOpcode{
         public:
             enum { code = 0x06 };
-            static constexpr const char* name = "Mod";
+            static constexpr const char* name = "MOD";
         };
 
         class Neg : BaseOpcode{

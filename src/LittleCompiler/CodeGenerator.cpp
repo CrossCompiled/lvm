@@ -83,7 +83,7 @@ namespace lvm {
             code.push_back(OpcodeMap["POP"]);
         }
 
-        void CodeGenerator::OutputCode(std::ostream &out) {
+        void CodeGenerator::OutputCode(std::ostream* out) {
             std::for_each(LabelMap.begin(), LabelMap.end(), [this](std::pair<std::string, label> x){
                 std::for_each(x.second.references.begin(), x.second.references.end(), [this, &x](std::vector<int>::value_type y){
                    code[y] = x.second.address;
@@ -91,12 +91,13 @@ namespace lvm {
             });
 
             std::for_each(code.begin(), code.end(), [&out](std::vector<int>::value_type x){
-                out.write(reinterpret_cast<char*>(&x), sizeof(int));
+                out->write(reinterpret_cast<char*>(&x), sizeof(int));
             });
 
         }
 
         void CodeGenerator::GenerateValue(const std::string &value) {
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(stoi(value));
         }
     }

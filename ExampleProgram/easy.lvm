@@ -1,0 +1,17 @@
+IN 
+IN 
+
+:GCD 
+DUP 
+0
+@END 
+JE 
+SWP 
+OVR 
+MOD
+@GCD
+JMP 
+
+:END
+POP 
+OUT
