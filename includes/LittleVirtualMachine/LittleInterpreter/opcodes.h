@@ -14,13 +14,16 @@
 namespace lvm {
     namespace interpreter {
 
-        template <typename T>
+        template <typename T, T size>
         struct vmsystem {
-            T program_ptr;
+            using mytype = vmsystem<T, size>;
+            using type = T;
+            using optype = typename std::add_pointer<void volatile(vmsystem<T, size>&)>::type;
+            T program_ptr = 0;
+            bool running = true;
+            std::array<T,size> memory;
+            std::array<T,size> program;
             std::stack<T> stack;
-            std::array<T,1000> memory;
-            std::array<T,1000> program;
-            bool running = false;
         };
 
         template<typename... T>
@@ -34,8 +37,8 @@ namespace lvm {
 
         template<typename T, typename ...Args>
         struct oc_11_impl {
-            using type = typename std::add_pointer<void volatile(vmsystem<T>&)>::type;
-            using list = oc_list<T, Args...>;
+            using type = T;
+            using list = oc_list<typename T::type, Args...>;
         };
 
         namespace opcodes {
@@ -317,7 +320,7 @@ namespace lvm {
         const std::array<A, sizeof...(T)> oc_array_impl<A, L<T...>>::data = { T::execute... };
 
         template<typename T>
-        struct oc_array : oc_array_impl<typename T::type, typename T::list::values>  {};
+        struct oc_array : oc_array_impl<typename T::type::optype, typename T::list::values>  {};
 
 
     }
