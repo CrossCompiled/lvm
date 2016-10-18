@@ -59,7 +59,7 @@ namespace lvm {
 		struct Compiler : sc::state_machine<Compiler, Initial, std::allocator<void>, sc::exception_translator<>> {
 			Compiler(lvm::compiler::ICodeGenerator* generator) : generator_(generator) {}
 
-			std::istream* input;
+			std::istream* input_;
 			lvm::compiler::ICodeGenerator* generator_;
 		};
 
@@ -75,7 +75,7 @@ namespace lvm {
 					throw std::exception();
 				}
 
-				context<Compiler>().input = ev.get_stream();
+				context<Compiler>().input_ = ev.get_stream();
 
 				return transit<Parsing>();
 			}
@@ -135,7 +135,7 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int first = context<Compiler>().input->peek();
+				int first = context<Compiler>().input_->peek();
 
 				if (std::isalpha(first)) { return transit<Letter>(); }
 				else if (std::isdigit(first)) { return transit<Number>(); }
@@ -144,7 +144,7 @@ namespace lvm {
 				else if (first == ';') { return transit<Comment>(); }
 				else if (first == EOF) { return transit<EndOfFile>(); }
 				else if (std::isspace(first)) {
-					context<Compiler>().input->get();
+					context<Compiler>().input_->get();
 					return discard_event();
 				}
 				else {
@@ -156,13 +156,21 @@ namespace lvm {
 		struct Letter : sc::simple_state<Letter, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
 				if (std::isalpha(read)) {
-					buffer.put(read);
+					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
-					// Call Code Generator -- TOUPPER
+					std::string uppercase;
+					for (auto c : buffer)
+						uppercase += std::toupper(c);
+
+					if (uppercase == "PRINT")
+						context<Compiler>().generator_->GeneratePrint();
+					else
+						context<Compiler>().generator_->GenerateInstruction(buffer);
+
 					return transit<NewLine>();
 				}
 
@@ -170,19 +178,19 @@ namespace lvm {
 			}
 
 		private:
-			std::stringstream buffer;
+			std::string buffer;
 		};
 
 		struct Number : sc::simple_state<Number, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
 				if (std::isdigit(read)) {
-					buffer.put(read);
+					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
-					// Call Code Generator
+					context<Compiler>().generator_->GenerateValue(buffer);
 					return transit<NewLine>();
 				}
 
@@ -190,54 +198,87 @@ namespace lvm {
 			}
 
 		private:
-			std::stringstream buffer;
+			std::string buffer;
 		};
 
 		struct Label : sc::simple_state<Label, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
-				if (read == ':' || read == '@') { return transit<Label>(); }
+				if (read == ':') {
+					type = LabelDef;
+					return discard_event();
+				}
+				else if (read == '@') {
+					type = LabelRef;
+					return discard_event();
+				}
+				else if (std::isspace(read))
+				{
+					switch (type)
+					{
+						case LabelDef:
+							context<Compiler>().generator_->GenerateLabelDef(buffer);
+							return transit<NewLine>();
+						case LabelRef:
+							context<Compiler>().generator_->GenerateLabelRef(buffer);
+							return transit<NewLine>();
+						case Unknown:
+						default:
+							throw std::exception();
+					}
+				}
+				else {
+					buffer += read;
+				}
 
 				return discard_event();
 			}
 
 		private:
-			std::stringstream buffer;
+			std::string buffer;
+
+			enum ReferenceType {
+				Unknown,
+				LabelDef,
+				LabelRef
+			};
+
+			ReferenceType type;
 		};
 
 		struct String : sc::simple_state<String, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 
 				if (read == '"') {
 					delimiter++;
 
 					if (delimiter >= 2) {
-						// CALL COOOOODE GENERATOR
+						context<Compiler>().generator_->GenerateStringValue(buffer);
 						return transit<NewLine>();
 					}
 
 					return discard_event();
 				}
 
-				buffer.put(read);
+				buffer += read;
 				return discard_event();
 			}
 
 		private:
 			int delimiter = 0;
-			std::stringstream buffer;
+			std::string buffer;
 		};
 
 		struct Comment : sc::simple_state<Comment, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input->get();
+				int read = context<Compiler>().input_->get();
 				if (read == '\n') {
 					return transit<NewLine>();
 				}
