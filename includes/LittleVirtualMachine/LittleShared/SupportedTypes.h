@@ -12,13 +12,14 @@
 namespace lvm {
     namespace shared {
 
-        typedef MakeTypeList<In, Out, Add, Sub, Mul, Duplicate, JumpEqual, Jump, Pop, Swap, Mod, CopyOver>::List SupportedOpcodes;
+
+        typedef MakeTypeList<opcodes::In, opcodes::Push, opcodes::Halt, opcodes::Out, opcodes::Add, opcodes::Sub, opcodes::Mul, opcodes::Duplicate, opcodes::JumpEqual, opcodes::Jump, opcodes::Pop, opcodes::Swap, opcodes::Mod, opcodes::CopyOver>::List SupportedOpcodes;
 
         template <typename TL>
         struct MakeOpcodeMap{
 
             static void run(std::map<std::string, const int> & innerMap){
-                innerMap.insert(std::pair<std::string, const int>(std::string(TL::First::name), TL::First::code));
+                innerMap.insert(std::pair<std::string, const int32_t>(std::string(TL::First::name), (int32_t)TL::First::template code<int32_t>));
                 MakeOpcodeMap<typename TL::Left>::run(innerMap);
             }
         };

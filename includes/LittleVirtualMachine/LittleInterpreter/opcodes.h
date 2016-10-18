@@ -5,358 +5,319 @@
 #ifndef LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 #define LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 
-#include <string>
 #include <iostream>
-#include <LittleVirtualMachine/LittleShared/opcodes.h>
 #include <stack>
-#include <unordered_map>
-#include <stdexcept>
+#include <array>
+
+#include <LittleVirtualMachine/LittleShared/opcodes.h>
 
 namespace lvm {
     namespace interpreter {
 
-        template <typename T, typename A = int>
+        template <typename T>
         struct vmsystem {
-            A program_ptr;
+            T program_ptr;
             std::stack<T> stack;
-            std::unordered_map<A,T> memory;
-            std::unordered_map<A,T> program;
+            std::array<T,1000> memory;
+            std::array<T,1000> program;
             bool running = false;
         };
 
-        template<typename T>
-        class In : public shared::In {
-        public:
-            static void execute(T &system) {
-                system.stack.push('a'); //Missing cin
-            };
+        template<typename... T>
+        struct oc_list_holder {};
+
+        template<typename A, typename... T>
+        struct oc_list {
+            using values = oc_list_holder<T...>;
+            using size = typename std::integral_constant<A, sizeof...(T)>;
         };
 
-        template<typename T>
-        class Out : public lvm::shared::Out {
-        public:
-            static void execute(T &system) {
-                std::cout << static_cast<char>(system.stack.top());
-                system.stack.pop();
-            };
+        template<typename T, typename ...Args>
+        struct oc_11_impl {
+            using type = typename std::add_pointer<void volatile(vmsystem<T>&)>::type;
+            using list = oc_list<T, Args...>;
         };
 
-        template<typename T>
-        class Add : public lvm::shared::Add {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                system.stack.top() += a;
-            };
-        };
-
-        template<typename T>
-        class Sub : public shared::Sub {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                system.stack.top() -= a;
-            };
-        };
-
-        template<typename T>
-        class Mul : public shared::Mul {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                system.stack.top() *= a;
-            };
-        };
-
-        template<typename T>
-        class Div : public shared::Div {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                system.stack.top() /= a;
-            };
-        };
-
-        template<typename T>
-        class Mod : public shared::Mod {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                system.stack.top() %= a;
-            };
-        };
-
-        template<typename T>
-        class Neg : public shared::Neg {
-        public:
-            static void execute(T &system) {
-                system.stack.top() = -system.stack.top();
-            };
-        };
-
-        template<typename T>
-        class Inc : public shared::Inc {
-        public:
-            static void execute(T &system) {
-                system.stack.top() = ++system.stack.top();
-            };
-        };
-
-        template<typename T>
-        class Dec : public shared::Dec {
-        public:
-            static void execute(T &system) {
-                system.stack.top() = --system.stack.top();
-            };
-        };
-
-        template<typename T>
-        class And : public shared::And {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top;
-                system.stack.pop();
-                system.stack.top() &= a;
-            };
-        };
-
-        template<typename T>
-        class Or : public shared::Or {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top;
-                system.stack.pop();
-                system.stack.top() |= a;
-            };
-        };
-
-        template<typename T>
-        class Not : public shared::Not {
-        public:
-            static void execute(T &system) {
-                system.stack.top() = !system.stack.top();
-            };
-        };
-
-        template<typename T>
-        class Xor : public shared::Xor {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top;
-                system.stack.pop();
-                system.stack.top() ^= a;
-            };
-        };
-
-        template<typename T>
-        class ShiftLeft : public shared::ShiftLeft {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top;
-                system.stack.pop();
-                system.stack.top() <<= a;
-            };
-        };
-
-        template<typename T>
-        class ShiftRight : public shared::ShiftRight {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top;
-                system.stack.pop();
-                system.stack.top() >>= a;
-            };
-        };
-
-        template<typename T>
-        class Pop : public shared::Pop {
-        public:
-            static void execute(T &system) {
-                system.stack.pop();
-            };
-        };
-
-        template<typename T>
-        class Duplicate : public shared::Duplicate {
-        public:
-            static void execute(T &system) {
-                system.stack.push(system.stack.top());
-            };
-        };
-
-        template<typename T>
-        class Swap : public shared::Swap {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                std::swap(system.stack.top(), a);
-                system.stack.push(a);
-            };
-        };
-
-        template<typename T>
-        class CopyOver : public shared::CopyOver {
-        public:
-            static void execute(T &system) {
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.push(a);
-                system.stack.push(b);
-            };
-        };
-
-        template<typename T>
-        class Load : public shared::Load {
-        public:
-            static void execute(T &system) {
-                system.stack.top() = system.memory[system.stack.top()];
-            };
-        };
-
-        template<typename T>
-        class Store : public shared::Store {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                system.memory[location] = system.stack.top();
-                system.stack.pop();
-            };
-        };
-
-        template<typename T>
-        class Jump : public shared::Jump {
-        public:
-            static void execute(T &system) {
-                system.program_ptr = system.stack.top();
-                system.stack.pop();
-            };
-        };
-
-        template<typename T>
-        class JumpEqual : public shared::JumpEqual {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a == b) {
-                    system.program_ptr = location;
-                }
-            };
-        };
-
-        template<typename T>
-        class JumpNotEqual : public shared::JumpNotEqual {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a != b) {
-                    system.program_ptr = location;
-                }
-            };
-        };
-
-        template<typename T>
-        class JumpGreater : public shared::JumpGreater {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a > b) {
-                    system.program_ptr = location;
-                }
-            };
-        };
-
-        template<typename T>
-        class JumpGreaterEqual : public shared::JumpGreaterEqual {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a >= b) {
-                    system.program_ptr = location;
+        namespace opcodes {
+            struct In : shared::opcodes::In {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    system.stack.push(0);
+                    std::cin >> system.stack.top();
+                    ++system.program_ptr;
                 };
             };
-        };
 
-        template<typename T>
-        class JumpLesser : public shared::JumpLesser {
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a < b) {
-                    system.program_ptr = location;
-                }
+            struct Out : shared::opcodes::Out {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    std::cout << (char)system.stack.top();
+                    system.stack.pop();
+                    ++system.program_ptr;
+                };
             };
-        };
 
-        template<typename T>
-        class JumpLesserEqual : public shared::JumpLesserEqual {
-        public:
-            static void execute(T &system) {
-                auto location = system.stack.top();
-                system.stack.pop();
-                auto a = system.stack.top();
-                system.stack.pop();
-                auto b = system.stack.top();
-                system.stack.pop();
-                if (a <= b) {
-                    system.program_ptr = location;
-                }
+            struct Add : shared::opcodes::Add {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
             };
-        };
 
-        template<typename T>
-        class Nop : public shared::Nop {
-        public:
-            static void execute(T &system) {};
-        };
-
-        template<typename T>
-        class Halt : public shared::Halt {
-        public:
-            static void execute(T &system) {
-                system.running = false;
+            struct Sub : shared::opcodes::Sub {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
             };
+
+            struct Mul : shared::opcodes::Mul {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Div : shared::opcodes::Div {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Mod : shared::opcodes::Mod {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    auto a = system.stack.top();
+                    system.stack.pop();
+                    system.stack.top() = system.stack.top() % a;
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Neg : shared::opcodes::Neg {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Inc : shared::opcodes::Inc {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Dec : shared::opcodes::Dec {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct And : shared::opcodes::And {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Or : shared::opcodes::Or {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Not : shared::opcodes::Not {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Xor : shared::opcodes::Xor {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct ShiftLeft : shared::opcodes::ShiftLeft {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct ShiftRight : shared::opcodes::ShiftRight {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Push : shared::opcodes::Push {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                    system.stack.push(system.program[system.program_ptr]);
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Pop : shared::opcodes::Pop {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    system.stack.pop();
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Duplicate : shared::opcodes::Duplicate {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    system.stack.push(system.stack.top());
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Swap : shared::opcodes::Swap {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    auto a = system.stack.top();
+                    system.stack.pop();
+                    auto b = system.stack.top();
+                    system.stack.pop();
+                    system.stack.push(a);
+                    system.stack.push(b);
+                    ++system.program_ptr;
+                };
+            };
+
+            struct CopyOver : shared::opcodes::CopyOver {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    auto a = system.stack.top();
+                    system.stack.pop();
+                    auto b = system.stack.top();
+                    system.stack.push(a);
+                    system.stack.push(b);
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Load : shared::opcodes::Load {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Store : shared::opcodes::Store {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Jump : shared::opcodes::Jump {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    system.program_ptr = system.stack.top();
+                    system.stack.pop();
+                };
+            };
+
+            struct JumpEqual : shared::opcodes::JumpEqual {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    auto addr = system.stack.top();
+                    system.stack.pop();
+                    auto a = system.stack.top();
+                    system.stack.pop();
+                    auto b = system.stack.top();
+                    system.stack.pop();
+                    system.program_ptr = (a == b) ? addr : system.program_ptr + 1;
+                };
+            };
+
+            struct JumpNotEqual : shared::opcodes::JumpNotEqual {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    auto a = system.stack.top();
+                    system.stack.pop();
+                    auto b = system.stack.top();
+                    system.stack.pop();
+                    system.program_ptr = (a != b) ? system.stack.top() : system.program_ptr + 1;
+                    system.stack.pop();
+                };
+            };
+
+            struct JumpGreater : shared::opcodes::JumpGreater {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct JumpGreaterEqual : shared::opcodes::JumpGreaterEqual {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct JumpLesser : shared::opcodes::JumpLesser {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct JumpLesserEqual : shared::opcodes::JumpLesserEqual {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Nop : shared::opcodes::Nop {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    ++system.program_ptr;
+                };
+            };
+
+            struct Halt : shared::opcodes::Halt {
+                template<typename T>
+                static volatile void execute(T& system) {
+                    system.running = false;
+                    ++system.program_ptr;
+                };
+            };
+
+
+
+            template<typename T>
+            using oc_11 = oc_11_impl<T, In, Out, Add, Sub, Mul, Div, Mod, Neg, Inc, Dec, And, Or, Not, Xor, ShiftLeft, ShiftRight, Push, Pop, Duplicate, Swap, CopyOver, Load, Store, Jump, JumpEqual, JumpNotEqual, JumpGreater, JumpGreaterEqual, JumpLesser, JumpLesserEqual, Nop, Halt>;
         };
 
-        template<typename T>
-        class Push : public lvm::shared::Push {
-        public:
-            static void execute(T &system) {
-                ++system.program_ptr;
-                system.stack.push(system.program[system.program_ptr]);
-            };
+
+        template<typename B, typename A>
+        struct oc_array_impl{};
+
+        template<typename A, template<class...> class L, class... T>
+        struct oc_array_impl<A, L<T...>> {
+            static const std::array<A, sizeof...(T)> data;
         };
+
+        template<typename A, template<class...> class L, class... T>
+        const std::array<A, sizeof...(T)> oc_array_impl<A, L<T...>>::data = { T::execute... };
+
+        template<typename T>
+        struct oc_array : oc_array_impl<typename T::type, typename T::list::values>  {};
 
 
     }

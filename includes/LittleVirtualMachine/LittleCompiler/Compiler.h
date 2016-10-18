@@ -181,7 +181,7 @@ namespace lvm {
 					return discard_event();
 				}
 
-				throw ParsingError("Unknown identifier: " + first);
+				throw ParsingError("Unknown identifier: first");
 			}
 		};
 

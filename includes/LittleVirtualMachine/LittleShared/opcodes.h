@@ -40,7 +40,7 @@ namespace lvm {
             };
 
             struct Mod : base<0x06> {
-                static constexpr const char *name = "Mod";
+                static constexpr const char *name = "MOD";
             };
 
             struct Neg : base<0x07> {

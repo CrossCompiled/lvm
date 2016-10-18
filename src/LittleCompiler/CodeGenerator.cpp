@@ -3,8 +3,8 @@
 //
 
 
-#include "../../includes/LittleVirtualMachine/LittleCompiler/CodeGenerator.h"
-#include "../../includes/LittleVirtualMachine/LittleCompiler/CompilerExceptions.h"
+#include <LittleVirtualMachine/LittleCompiler/CodeGenerator.h>
+#include <LittleVirtualMachine/LittleCompiler/CompilerExceptions.h>
 #include <string>
 #include <fstream>
 #include <algorithm>
@@ -29,6 +29,7 @@ namespace lvm {
         }
 
         void CodeGenerator::GenerateLabelRef(const std::string &labelRef) {
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(0);
             LabelMap[labelRef].references.push_back(code.size() -1);
         }
@@ -90,8 +91,10 @@ namespace lvm {
                 });
             });
 
+            code.push_back(OpcodeMap["HALT"]);
+
             std::for_each(code.begin(), code.end(), [&out](std::vector<int>::value_type x){
-                out.write(reinterpret_cast<char*>(&x), sizeof(int));
+                out.write(reinterpret_cast<char*>(&x), sizeof(x));
             });
 
         }

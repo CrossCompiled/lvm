@@ -1,37 +1,34 @@
-#include <map>
-#include <chrono>
-#include <thread>
-#include <LittleVirtualMachine/LittleShared/opcodes.h>
+// read a file into memory
+#include <iostream>     // std::cout
+#include <fstream>      // std::ifstream
+#include <array>
 #include <LittleVirtualMachine/LittleInterpreter/opcodes.h>
-using namespace lvm;
 
-typedef void (*myfunc)(interpreter::vmsystem<int, int>&);
+int main(int argn, char* argc[]) {
 
-int main(){
-    auto opmap = std::map<int, myfunc >();
+    auto system = lvm::interpreter::vmsystem<int32_t>();
 
-    opmap.insert( std::pair<int, myfunc >(shared::Add::code, interpreter::Add<interpreter::vmsystem<int, int> >::execute ));
-    opmap.insert( std::pair<int, myfunc >(shared::Out::code, interpreter::Out<interpreter::vmsystem<int, int> >::execute ));
-    opmap.insert( std::pair<int, myfunc >(shared::Push::code, interpreter::Push<interpreter::vmsystem<int, int> >::execute ));
-    opmap.insert( std::pair<int, myfunc >(shared::Halt::code, interpreter::Halt<interpreter::vmsystem<int, int> >::execute ));
+    using oc_11       = lvm::interpreter::opcodes::oc_11<int32_t>;
+    using oc_11_array = lvm::interpreter::oc_array<oc_11>;
 
-    auto system = interpreter::vmsystem<int, int>();
+    std::cout << argc[1] << std::endl;
 
-    system.program.insert(std::pair<int, int>(0x0000, shared::Push::code));
-    system.program.insert(std::pair<int, int>(0x0001, '0'));
-    system.program.insert(std::pair<int, int>(0x0002, shared::Push::code));
-    system.program.insert(std::pair<int, int>(0x0003, 4));
-    system.program.insert(std::pair<int, int>(0x0004, shared::Add::code));
-    system.program.insert(std::pair<int, int>(0x0005, shared::Out::code));
-    system.program.insert(std::pair<int, int>(0x0006, shared::Halt::code));
-
-    system.program_ptr = 0x000;
+    std::ifstream is (argc[1], std::ifstream::binary);
+    if (is) {
+        is.seekg (0, is.end);
+        int length = (int32_t)is.tellg() / 4;
+        is.seekg (0, is.beg);
+        is.read(reinterpret_cast<char *>(system.program.data()), sizeof(int32_t)*length);
+        is.close();
+    }
 
     system.running = true;
+    system.program_ptr = 0;
+
     while(system.running) {
-        opmap[system.program[system.program_ptr]](system);
-        ++system.program_ptr;
+        oc_11_array::data[system.program[system.program_ptr]](system);
     }
 
     return 0;
+
 }

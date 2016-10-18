@@ -1,6 +1,5 @@
 IN ; read integer "A" from standard input
 IN ; read integer "B" from standard input
-JG ;
 
 :GCD ; this is a label
 DUP ; if B is 0 then A is the gcd
