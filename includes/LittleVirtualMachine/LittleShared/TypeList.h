@@ -6,6 +6,8 @@
 #define LECTURE07_08_TYPELIST_H
 
 #include <typeinfo>
+#include <cstdlib>
+#include <string>
 
 
 namespace lvm {
