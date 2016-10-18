@@ -169,3 +169,104 @@ TEST_F (CompilerCodeGenTest, GenerateStringEscapedChar)
     EXPECT_EQ(ssb->sbumpc(), 0);
 
 }
+
+
+TEST_F (CompilerCodeGenTest, GenerateValue)
+{
+    CodeGenerator uut;
+    uut.GenerateValue("100");
+
+    std::streambuf* sbp = new std::stringbuf();
+    std::stringbuf* ssb = (std::stringbuf*)sbp;
+    std::ostream os(sbp);
+
+    uut.OutputCode(os);
+
+    EXPECT_EQ(ssb->sbumpc(), 100);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+}
+
+TEST_F (CompilerCodeGenTest, GeneratePrint)
+{
+    CodeGenerator uut;
+    uut.GenerateStringValue("Hello");
+    uut.GeneratePrint();
+
+    std::streambuf* sbp = new std::stringbuf();
+    std::stringbuf* ssb = (std::stringbuf*)sbp;
+    std::ostream os(sbp);
+
+    uut.OutputCode(os);
+
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 'o');
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 'l');
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 'l');
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 'e');
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 'H');
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 17);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 11);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0x17);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0x01);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0x06);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0x16);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+
+    EXPECT_EQ(ssb->sbumpc(), 0x10);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+    EXPECT_EQ(ssb->sbumpc(), 0);
+}

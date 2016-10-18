@@ -12,7 +12,7 @@
 namespace lvm {
     namespace shared {
 
-        typedef MakeTypeList<In, Out, Add, Sub, Mul>::List SupportedOpcodes;
+        typedef MakeTypeList<In, Out, Add, Sub, Mul, Duplicate, JumpEqual, Jump, Pop>::List SupportedOpcodes;
 
         template <typename TL>
         struct MakeOpcodeMap{

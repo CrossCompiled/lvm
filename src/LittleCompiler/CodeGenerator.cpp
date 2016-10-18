@@ -99,6 +99,5 @@ namespace lvm {
         void CodeGenerator::GenerateValue(const std::string &value) {
             code.push_back(stoi(value));
         }
-
     }
 }
