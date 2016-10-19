@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 add_library(${LECTURE} src/LittleCompiler/CodeGenerator.cpp)
 target_include_directories(${LECTURE} PUBLIC includes)
 set_target_properties(${LECTURE} PROPERTIES
-        CXX_STANDARD 11
+        CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
 
 # LittleCompiler
@@ -26,7 +26,7 @@ add_executable(LittleCompiler src/LittleCompiler/main.cpp)
 target_link_libraries(LittleCompiler ${LECTURE})
 
 set_target_properties(LittleCompiler PROPERTIES
-        CXX_STANDARD 11
+        CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
 
 # LittleInterpreter
@@ -34,7 +34,7 @@ add_executable(LittleInterpreter src/LittleInterpreter/main.cpp)
 target_link_libraries(LittleInterpreter ${LECTURE})
 
 set_target_properties(LittleInterpreter PROPERTIES
-        CXX_STANDARD 11
+        CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
 
 
@@ -57,7 +57,7 @@ foreach(testfile ${LTESTS})
     target_link_libraries(${name} ${LECTURE})
     target_link_libraries(${name} ${GMOCK_MAIN_LIBRARY})
     set_target_properties(${name} PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD 14
             CXX_STANDARD_REQUIRED YES)
     if(MSVC)
         set_target_properties(${name} PROPERTIES
