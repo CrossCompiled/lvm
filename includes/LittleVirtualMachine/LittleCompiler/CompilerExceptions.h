@@ -25,6 +25,10 @@ namespace lvm{
 			struct ParsingError : public CompilerException {
 				ParsingError(const std::string& message) : CompilerException(message) {}
 			};
+
+			struct StreamError : public CompilerException {
+				StreamError(const std::string& message) : CompilerException(message) {}
+			};
 		}
 }
 

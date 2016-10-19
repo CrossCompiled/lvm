@@ -8,16 +8,16 @@ namespace compiler = lvm::compiler;
 
 int main(int argc, char** argv) {
 	try {
-		compiler::CodeGenerator generator;
-		compiler::Compiler compiler(&generator);
+		compiler::CodeGenerator codeGenerator;
+		compiler::FileHelper fileHelper;
+
+		compiler::Compiler compiler(codeGenerator, fileHelper);
 		compiler.initiate();
 
-		std::ifstream input(argv[1]);
-		std::cout << argv[0] << std::endl;
-		std::cout << argv[1] << std::endl;
-		compiler.process_event(lvm::compiler::LoadFileEvent(&input));
+		std::string inputPath = static_cast<std::string>(argv[1]);
+		compiler.process_event(lvm::compiler::LoadFileEvent(inputPath));
 
-		while (!input.eof())
+		while (!compiler.get_input().get_ro_stream().eof())
 			compiler.process_event(lvm::compiler::ProcessCharEvent());
 
 		compiler.process_event(lvm::compiler::ProcessCharEvent());
@@ -25,8 +25,8 @@ int main(int argc, char** argv) {
 
 		std::ofstream output("TestOut", std::ios::binary);
 
-		compiler.process_event(lvm::compiler::WriteByteCodeEvent(&output));
-		compiler.process_event(lvm::compiler::WriteByteCodeEvent(&output));
+		compiler.process_event(lvm::compiler::WriteByteCodeEvent(output));
+		compiler.process_event(lvm::compiler::WriteByteCodeEvent(output));
 
 		output.close();
 	}
