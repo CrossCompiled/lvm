@@ -7,207 +7,144 @@
 
 namespace lvm {
     namespace shared {
-        class BaseOpcode {
-        public:
-            enum { code = 0xFF};
-            static constexpr const char* name = "";
-        };
+        namespace opcodes {
+            template<int id>
+            
+            struct base {
+                template<typename T>
+                static constexpr const T code = (T)id;
+            };
+            
+            struct In : base<0x00> {
+                static constexpr const char *name = "IN";
+            };
 
-        class In : BaseOpcode {
-        public:
-            enum { code = 0x00 };
-            static constexpr const char* name = "IN";
-        };
+            struct Out : base<0x01> {
+                static constexpr const char *name = "OUT";
+            };
 
-        class Out : BaseOpcode {
-        public:
-            enum { code = 0x01 };
-            static constexpr const char* name = "OUT";
-        };
+            struct Add : base<0x02> {
+                static constexpr const char *name = "ADD";
+            };
 
-        class Add : BaseOpcode {
-        public:
-            enum { code = 0x02 };
-            static constexpr const char* name = "ADD";
-        };
+            struct Sub : base<0x03> {
+                static constexpr const char *name = "SUB";
+            };
 
-        class Sub : BaseOpcode {
-        public:
-            enum { code = 0x03 };
-            static constexpr const char* name = "SUB";
-        };
+            struct Mul : base<0x04> {
+                static constexpr const char *name = "MUL";
+            };
 
-        class Mul : BaseOpcode{
-        public:
-            enum { code = 0x04 };
-            static constexpr const char* name = "MUL";
-        };
+            struct Div : base<0x05> {
+                static constexpr const char *name = "DIV";
+            };
 
-        class Div : BaseOpcode{
-        public:
-            enum { code = 0x05 };
-            static constexpr const char* name = "DIV";
-        };
+            struct Mod : base<0x06> {
+                static constexpr const char *name = "Mod";
+            };
 
-        class Mod : BaseOpcode{
-        public:
-            enum { code = 0x06 };
-            static constexpr const char* name = "MOD";
-        };
+            struct Neg : base<0x07> {
+                static constexpr const char *name = "NEG";
+            };
 
-        class Neg : BaseOpcode{
-        public:
-            enum { code = 0x07 };
-            static constexpr const char* name = "NEG";
-        };
+            struct Inc : base<0x08> {
+                static constexpr const char *name = "INC";
+            };
 
-        class Inc : BaseOpcode{
-        public:
-            enum { code = 0x08 };
-            static constexpr const char* name = "INC";
-        };
+            struct Dec : base<0x09> {
+                static constexpr const char *name = "DEC";
+            };
 
-        class Dec : BaseOpcode{
-        public:
-            enum { code = 0x09 };
-            static constexpr const char* name = "DEC";
-        };
+            struct And : base<0x0A> {
+                static constexpr const char *name = "AND";
+            };
 
-        class And : BaseOpcode{
-        public:
-            enum { code = 0x0A };
-            static constexpr const char* name = "AND";
-        };
+            struct Or : base<0x0B> {
+                static constexpr const char *name = "OR";
+            };
 
-        class Or : BaseOpcode{
-        public:
-            enum { code = 0x0B };
-            static constexpr const char* name = "OR";
-        };
+            struct Not : base<0x0C> {
+                static constexpr const char *name = "NOT";
+            };
 
-        class Not : BaseOpcode{
-        public:
-            enum { code = 0x0C };
-            static constexpr const char* name = "NOT";
-        };
+            struct Xor : base<0x0D> {
+                static constexpr const char *name = "XOR";
+            };
 
-        class Xor : BaseOpcode{
-        public:
-            enum { code = 0x0D };
-            static constexpr const char* name = "XOR";
-        };
+            struct ShiftLeft : base<0x0E> {
+                static constexpr const char *name = "SHL";
+            };
 
-        class ShiftLeft : BaseOpcode{
-        public:
-            enum { code = 0x0E };
-            static constexpr const char* name = "SHL";
-        };
+            struct ShiftRight : base<0x0F> {
+                static constexpr const char *name = "SHR";
+            };
 
-        class ShiftRight : BaseOpcode{
-        public:
-            enum { code = 0x0F };
-            static constexpr const char* name = "SHR";
-        };
+            struct Push : base<0x10> {
+                static constexpr const char *name = "PUSH";
+            };
 
-        class Pop : BaseOpcode{
-        public:
-            enum { code = 0x10 };
-            static constexpr const char* name = "POP";
-        };
+            struct Pop : base<0x11> {
+                static constexpr const char *name = "POP";
+            };
 
-        class Duplicate : BaseOpcode{
-        public:
-            enum { code = 0x11 };
-            static constexpr const char* name = "DUP";
-        };
+            struct Duplicate : base<0x12> {
+                static constexpr const char *name = "DUP";
+            };
 
-        class Swap : BaseOpcode{
-        public:
-            enum { code = 0x12 };
-            static constexpr const char* name = "SWP";
-        };
+            struct Swap : base<0x13> {
+                static constexpr const char *name = "SWP";
+            };
 
-        class CopyOver : BaseOpcode{
-        public:
-            enum { code = 0x13 };
-            static constexpr const char* name = "OVR";
-        };
+            struct CopyOver : base<0x14> {
+                static constexpr const char *name = "OVR";
+            };
 
-        class Load : BaseOpcode{
-        public:
-            static const uint8_t code = 0x14;
-            static constexpr const char* name = "LOAD";
-        };
+            struct Load : base<0x15> {
+                static constexpr const char *name = "LOAD";
+            };
 
-        class Store : BaseOpcode{
-        public:
-            enum { code = 0x15 };
-            static constexpr const char* name = "STOR";
-        };
+            struct Store : base<0x16> {
+                static constexpr const char *name = "STOR";
+            };
 
-        class Jump : BaseOpcode{
-        public:
-            enum { code = 0x16 };
-            static constexpr const char* name = "JMP";
-        };
+            struct Jump : base<0x17> {
+                static constexpr const char *name = "JMP";
+            };
 
-        class JumpEqual : BaseOpcode{
-        public:
-            enum { code = 0x17 };
-            static constexpr const char* name = "JE";
-        };
+            struct JumpEqual : base<0x18> {
+                static constexpr const char *name = "JE";
+            };
 
-        class JumpNotEqual : BaseOpcode{
-        public:
-            enum { code = 0x18 };
-            static constexpr const char* name = "JNE";
-        };
+            struct JumpNotEqual : base<0x19> {
+                static constexpr const char *name = "JNE";
+            };
 
-        class JumpGreater : BaseOpcode{
-        public:
-            enum { code = 0x19 };
-            static constexpr const char* name = "JG";
-        };
+            struct JumpGreater : base<0x1A> {
+                static constexpr const char *name = "JG";
+            };
 
-        class JumpGreaterEqual : BaseOpcode{
-        public:
-            enum { code = 0x1B };
-            static constexpr const char* name = "JGE";
-        };
+            struct JumpGreaterEqual : base<0x1B> {
+                static constexpr const char *name = "JGE";
+            };
 
-        class JumpLesser : BaseOpcode{
-        public:
-            enum { code = 0x1B };
-            static constexpr const char* name = "JL";
-        };
+            struct JumpLesser : base<0x1C> {
+                static constexpr const char *name = "JL";
+            };
 
-        class JumpLesserEqual : BaseOpcode{
-        public:
-            enum { code = 0x1C };
-            static constexpr const char* name = "JLE";
-        };
+            struct JumpLesserEqual : base<0x1D> {
+                static constexpr const char *name = "JLE";
+            };
 
-        class Nop : BaseOpcode{
-        public:
-            enum { code = 0x1D };
-            static constexpr const char* name = "NOP";
-        };
+            struct Nop : base<0x1E> {
+                static constexpr const char *name = "NOP";
+            };
 
-        class Halt : BaseOpcode{
-        public:
-            enum { code = 0x1E };
-            static constexpr const char* name = "HALT";
-        };
-
-        class Push : BaseOpcode{
-        public:
-            enum { code = 0x1F };
-            static constexpr const char* name = "PUSH";
-        };
+            struct Halt : base<0x1F> {
+                static constexpr const char *name = "HALT";
+            };
+        }
     }
 }
-
-
 
 
 #endif //LITTLEVIRTUALMACHINE_LITTLESHARED_OPCODES_H
