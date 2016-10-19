@@ -14,9 +14,13 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 
+find_package(Boost REQUIRED)
+
 # Libraries
 add_library(${LECTURE} src/LittleCompiler/CodeGenerator.cpp)
 target_include_directories(${LECTURE} PUBLIC includes)
+target_link_libraries(${LECTURE} ${Boost_LIBRARIES})
+target_include_directories(${LECTURE} PUBLIC ${Boost_INCLUDE_DIRS})
 set_target_properties(${LECTURE} PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
