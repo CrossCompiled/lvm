@@ -13,6 +13,7 @@ namespace lvm {
 			virtual void GenerateValue(const std::string& value) = 0;
 			virtual void GenerateStringValue(const std::string& string) = 0;
 			virtual void OutputCode(std::ostream* out) = 0;
+
 		protected:
 			ICodeGenerator() {};
 		};

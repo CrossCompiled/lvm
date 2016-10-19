@@ -9,6 +9,7 @@ struct MockCodeGenerator : public lvm::compiler::ICodeGenerator {
 	MOCK_METHOD1(GenerateLabelRef, void(const std::string&));
 	MOCK_METHOD1(GenerateStringValue, void(const std::string&));
 	MOCK_METHOD1(GenerateValue, void(const std::string&));
+	MOCK_METHOD1(OutputCode, void(std::ostream* out));
 };
 
 class CompilerStateTest : public ::testing::Test {};

@@ -73,7 +73,7 @@ namespace lvm {
 
 			sc::result react(const LoadFileEvent& ev) {
 				if (!ev.get_stream()->good()) {
-					throw std::exception();
+					throw std::runtime_error("File stream wan't good.");
 				}
 
 				context<Compiler>().input_ = ev.get_stream();
@@ -85,7 +85,12 @@ namespace lvm {
 				try {
 					throw;
 				}
-				catch (const std::exception&) {
+				catch (const CompilerException& e) {
+					std::cerr << "Compilation error: " <<  e.what() << std::endl;
+					return transit<Failed>();
+				}
+				catch (const std::runtime_error& e) {
+					std::cerr << "Run-time error: " <<  e.what() << std::endl;
 					return transit<Failed>();
 				}
 				catch (...) {
@@ -123,7 +128,20 @@ namespace lvm {
 				try {
 					throw;
 				}
-				catch (const std::exception&) {
+				catch (const ParsingError& e) {
+					std::cerr << "Something went wrong with the parsing: " << e.what() << std::endl;
+					return transit<Failed>();
+				}
+				catch (const WrongOpcode& e) {
+					std::cerr << "Invalid instruction: " << e.what() << std::endl;
+					return transit<Failed>();
+				}
+				catch (const MissingLabel& e) {
+					std::cerr << "Label hasn't been declared: " << e.what() << std::endl;
+					return transit<Failed>();
+				}
+				catch (const DuplicateLabel& e) {
+					std::cerr << "Label was declared more that once: " << e.what() << std::endl;
 					return transit<Failed>();
 				}
 				catch (...) {
@@ -155,7 +173,7 @@ namespace lvm {
 					return discard_event();
 				}
 
-				throw std::exception();
+				throw ParsingError("Unknown indentifier: " + first);
 			}
 		};
 
