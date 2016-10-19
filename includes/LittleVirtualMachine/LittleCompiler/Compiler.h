@@ -19,6 +19,7 @@
 
 #include "LittleVirtualMachine/LittleCompiler/ICodeGenerator.h"
 #include "LittleVirtualMachine/LittleCompiler/CompilerExceptions.h"
+#include "LittleVirtualMachine/LittleCompiler/FileHelper.h"
 
 namespace sc = boost::statechart;
 namespace mpl = boost::mpl;
@@ -30,22 +31,22 @@ namespace lvm {
 		 */
 
 		struct LoadFileEvent : sc::event<LoadFileEvent> {
-			LoadFileEvent(std::istream* input) : input_(input) {}
-			std::istream* get_stream() const { return input_; }
+			LoadFileEvent(std::string& path) : path_(path) {}
+			std::string& get_path() const { return path_; }
 
 		private:
-			std::istream* input_;
+			std::string& path_;
 		};
 
 		struct ProcessCharEvent : sc::event<ProcessCharEvent> {
 		};
 
 		struct WriteByteCodeEvent : sc::event<WriteByteCodeEvent> {
-			WriteByteCodeEvent(std::ostream* output) : output_(output) {}
-			std::ostream* get_stream() const { return output_; }
+			WriteByteCodeEvent(std::ostream& output) : output_(output) {}
+			std::ostream& get_stream() const { return output_; }
 
 		private:
-			std::ostream* output_;
+			std::ostream& output_;
 		};
 
 		/*
@@ -58,10 +59,15 @@ namespace lvm {
 		struct Failed;
 
 		struct Compiler : sc::state_machine<Compiler, Initial, std::allocator<void>, sc::exception_translator<>> {
-			Compiler(lvm::compiler::ICodeGenerator* generator) : generator_(generator) {}
+			Compiler(ICodeGenerator& generator, IStreamHelper& inputHelper) : generator_(generator), input_(inputHelper) {}
 
-			std::istream* input_;
-			lvm::compiler::ICodeGenerator* generator_;
+			IStreamHelper& get_input() const { return input_; }
+
+			ICodeGenerator& get_generator() const { return generator_; }
+
+		private:
+			ICodeGenerator& generator_;
+			IStreamHelper& input_;
 		};
 
 		/*
@@ -72,11 +78,7 @@ namespace lvm {
 			typedef mpl::list<sc::custom_reaction<sc::exception_thrown>, sc::custom_reaction<LoadFileEvent>> reactions;
 
 			sc::result react(const LoadFileEvent& ev) {
-				if (!ev.get_stream()->good()) {
-					throw std::runtime_error("File stream wan't good.");
-				}
-
-				context<Compiler>().input_ = ev.get_stream();
+				context<Compiler>().get_input().open(ev.get_path());
 
 				return transit<Parsing>();
 			}
@@ -154,7 +156,7 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int first = context<Compiler>().input_->peek();
+				int first = context<Compiler>().get_input().get_ro_stream().peek();
 
 				if (std::isalpha(first)) { return transit<Instruction>(); }
 
@@ -169,7 +171,7 @@ namespace lvm {
 				if (first == -1) { return transit<EndOfFile>(); }
 
 				if (std::isspace(first)) {
-					context<Compiler>().input_->get();
+					context<Compiler>().get_input().get_ro_stream().get();
 					return discard_event();
 				}
 
@@ -180,7 +182,7 @@ namespace lvm {
 		struct Instruction : sc::simple_state<Instruction, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input_->get();
+				int read = context<Compiler>().get_input().get_ro_stream().get();
 
 				if (std::isalpha(read)) {
 					buffer += read;
@@ -189,9 +191,9 @@ namespace lvm {
 					std::transform(buffer.begin(), buffer.end(), buffer.begin(), std::ptr_fun<int, int>(std::toupper));
 
 					if (buffer == "PRINT")
-						context<Compiler>().generator_->GeneratePrint();
+						context<Compiler>().get_generator().GeneratePrint();
 					else
-						context<Compiler>().generator_->GenerateInstruction(buffer);
+						context<Compiler>().get_generator().GenerateInstruction(buffer);
 
 					return transit<NewLine>();
 				}
@@ -206,13 +208,13 @@ namespace lvm {
 		struct Number : sc::simple_state<Number, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input_->get();
+				int read = context<Compiler>().get_input().get_ro_stream().get();
 
 				if (std::isdigit(read)) {
 					buffer += read;
 					return discard_event();
 				} else if (std::isspace(read)) {
-					context<Compiler>().generator_->GenerateValue(buffer);
+					context<Compiler>().get_generator().GenerateValue(buffer);
 					return transit<NewLine>();
 				}
 
@@ -227,7 +229,7 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input_->get();
+				int read = context<Compiler>().get_input().get_ro_stream().get();
 
 				if (read == ':') {
 					type = LabelDef;
@@ -242,10 +244,10 @@ namespace lvm {
 					switch (type)
 					{
 						case LabelDef:
-							context<Compiler>().generator_->GenerateLabelDef(buffer);
+							context<Compiler>().get_generator().GenerateLabelDef(buffer);
 							return transit<NewLine>();
 						case LabelRef:
-							context<Compiler>().generator_->GenerateLabelRef(buffer);
+							context<Compiler>().get_generator().GenerateLabelRef(buffer);
 							return transit<NewLine>();
 						case Unknown:
 						default:
@@ -274,13 +276,13 @@ namespace lvm {
 		struct String : sc::simple_state<String, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input_->get();
+				int read = context<Compiler>().get_input().get_ro_stream().get();
 
 				if (read == '"') {
 					delimiter++;
 
 					if (delimiter >= 2) {
-						context<Compiler>().generator_->GenerateStringValue(buffer);
+						context<Compiler>().get_generator().GenerateStringValue(buffer);
 						return transit<NewLine>();
 					}
 
@@ -300,7 +302,7 @@ namespace lvm {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
 
 			sc::result react(const ProcessCharEvent&) {
-				int read = context<Compiler>().input_->get();
+				int read = context<Compiler>().get_input().get_ro_stream().get();
 				if (read == '\n') {
 					return transit<NewLine>();
 				}
@@ -321,7 +323,7 @@ namespace lvm {
 			typedef sc::custom_reaction<WriteByteCodeEvent> reactions;
 
 			sc::result react(const WriteByteCodeEvent& e) {
-                context<Compiler>().generator_->OutputCode(e.get_stream());
+				context<Compiler>().get_generator().OutputCode(e.get_stream());
 				return transit<Initial>();
 			}
 		};
