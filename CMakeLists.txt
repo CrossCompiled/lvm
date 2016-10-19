@@ -21,6 +21,14 @@ set_target_properties(${LECTURE} PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
 
+#LittleApplication
+add_executable(LittleApplication src/LittleApplication/main.cpp)
+target_link_libraries(LittleApplication ${LECTURE} ncurses++w formw menuw panelw ncursesw)
+
+set_target_properties(LittleApplication PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES)
+
 # LittleCompiler
 add_executable(LittleCompiler src/LittleCompiler/main.cpp)
 target_link_libraries(LittleCompiler ${LECTURE})

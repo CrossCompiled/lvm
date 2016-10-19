@@ -53,7 +53,7 @@ namespace lvm {
             bool backslash;
             std::for_each(userString.begin(), userString.end(), [&backslash, &stringy](std::string::value_type x) {
                 if(x == '\\'){
-                    backslash == true;
+                    backslash = true;
                 } else {
                     if(backslash){
                         stringy.push_back(GetEscape(x));
