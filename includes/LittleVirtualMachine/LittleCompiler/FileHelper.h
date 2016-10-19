@@ -3,6 +3,7 @@
 
 #include <string>
 #include <fstream>
+#include "LittleVirtualMachine/LittleCompiler/ICodeGenerator.h"
 #include "LittleVirtualMachine/LittleCompiler/IStreamHelper.h"
 
 namespace lvm {
@@ -21,6 +22,8 @@ namespace lvm {
 					stream_.close();
 
 				stream_.open(path);
+				if (!stream_.good())
+					throw StreamError("Couldn't read from stream.");
 			};
 
 			virtual std::istream& get_ro_stream() { return stream_; }

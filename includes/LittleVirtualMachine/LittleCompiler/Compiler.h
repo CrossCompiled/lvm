@@ -32,6 +32,7 @@ namespace lvm {
 
 		struct LoadFileEvent : sc::event<LoadFileEvent> {
 			LoadFileEvent(std::string& path) : path_(path) {}
+
 			std::string& get_path() const { return path_; }
 
 		private:
@@ -43,6 +44,7 @@ namespace lvm {
 
 		struct WriteByteCodeEvent : sc::event<WriteByteCodeEvent> {
 			WriteByteCodeEvent(std::ostream& output) : output_(output) {}
+
 			std::ostream& get_stream() const { return output_; }
 
 		private:
@@ -87,12 +89,16 @@ namespace lvm {
 				try {
 					throw;
 				}
+				catch (const StreamError& e) {
+					std::cerr << "Stream error: " << e.what() << std::endl;
+					return transit<Failed>();
+				}
 				catch (const CompilerException& e) {
-					std::cerr << "Compilation error: " <<  e.what() << std::endl;
+					std::cerr << "Compilation error: " << e.what() << std::endl;
 					return transit<Failed>();
 				}
 				catch (const std::runtime_error& e) {
-					std::cerr << "Run-time error: " <<  e.what() << std::endl;
+					std::cerr << "Run-time error: " << e.what() << std::endl;
 					return transit<Failed>();
 				}
 				catch (...) {
@@ -175,12 +181,13 @@ namespace lvm {
 					return discard_event();
 				}
 
-				throw ParsingError("Unknown indentifier: " + first);
+				throw ParsingError("Unknown identifier: " + first);
 			}
 		};
 
 		struct Instruction : sc::simple_state<Instruction, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
+
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().get_input().get_ro_stream().get();
 
@@ -207,6 +214,7 @@ namespace lvm {
 
 		struct Number : sc::simple_state<Number, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
+
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().get_input().get_ro_stream().get();
 
@@ -234,15 +242,11 @@ namespace lvm {
 				if (read == ':') {
 					type = LabelDef;
 					return discard_event();
-				}
-				else if (read == '@') {
+				} else if (read == '@') {
 					type = LabelRef;
 					return discard_event();
-				}
-				else if (std::isspace(read))
-				{
-					switch (type)
-					{
+				} else if (std::isspace(read)) {
+					switch (type) {
 						case LabelDef:
 							context<Compiler>().get_generator().GenerateLabelDef(buffer);
 							return transit<NewLine>();
@@ -253,8 +257,7 @@ namespace lvm {
 						default:
 							throw std::exception();
 					}
-				}
-				else {
+				} else {
 					buffer += read;
 				}
 
@@ -275,6 +278,7 @@ namespace lvm {
 
 		struct String : sc::simple_state<String, Parsing> {
 			typedef sc::custom_reaction<ProcessCharEvent> reactions;
+
 			sc::result react(const ProcessCharEvent&) {
 				int read = context<Compiler>().get_input().get_ro_stream().get();
 
