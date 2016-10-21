@@ -1,13 +1,16 @@
 // read a file into memory
-#include <iostream>     // std::cout
-#include <fstream>      // std::ifstream
+#include <iostream>
+#include <stack>
+#include <vector>
 #include <array>
+#include <fstream>
 #include <LittleVirtualMachine/LittleInterpreter/opcodes.h>
 
 
 
 namespace {
-    using vmsystem    = lvm::interpreter::vmsystem<int32_t, 100>;
+    using vmsystem    = lvm::interpreter::vmsystem<int32_t, std::array<int32_t,100>, std::array<int32_t, 100>, std::array<int32_t, 100>>;
+//    using vmsystem    = lvm::interpreter::vmsystem<int32_t, std::stack<int32_t>, std::array<int32_t, 100>, std::array<int32_t, 100>>;
     using oc_11       = lvm::interpreter::opcodes::oc_11<vmsystem>;
     using oc_11_array = lvm::interpreter::oc_array<oc_11>;
 
@@ -34,6 +37,6 @@ int main(int argn, char* argc[]) {
         oc_11_array::data[vm.program[vm.program_ptr]](vm);
     }
 
-    return vm.stack.top();
+    return lvm::interpreter::exit_code(vm);
 
 }

@@ -7,23 +7,84 @@
 
 #include <iostream>
 #include <stack>
+#include <vector>
 #include <array>
+#include <fstream>
 
 #include <LittleVirtualMachine/LittleShared/opcodes.h>
-
 namespace lvm {
     namespace interpreter {
 
-        template <typename T, T size>
-        struct vmsystem {
-            using mytype = vmsystem<T, size>;
+        template <typename T>
+        struct has_at {
+            enum { value = false };
+        };
+
+        template <typename T>
+        struct has_at<std::vector<T>> {
+            enum { value = true };
+        };
+
+        template <typename T, size_t F>
+        struct has_at<std::array<T, F>> {
+            enum { value = true };
+        };
+
+        template <typename T>
+        struct has_pop {
+            enum { value = false };
+        };
+
+        template <typename T>
+        struct has_pop<std::stack<T>> {
+            enum { value = true };
+        };
+
+        template <typename T>
+        struct has_push {
+            enum { value = false };
+        };
+
+        template <typename T>
+        struct has_push<std::stack<T>> {
+            enum { value = true };
+        };
+
+        template <typename T>
+        struct need_stack_ptr {
+            enum { value = false };
+        };
+
+        template <typename T, size_t F>
+        struct need_stack_ptr<std::array<T, F>> {
+            enum { value = true };
+        };
+
+        template <typename T, bool> struct NeedStackPointer { };
+
+        template <typename T>
+        struct NeedStackPointer<T, true > {
+            T stack_ptr = 0;
+        };
+
+
+        template <typename T, typename STACK, typename MEMORY, typename PROGRAM >
+        struct vmsystem : NeedStackPointer<T, need_stack_ptr<STACK>::value> {
+            using mytype = vmsystem<T, STACK, MEMORY, PROGRAM>;
             using type = T;
-            using optype = typename std::add_pointer<void volatile(vmsystem<T, size>&)>::type;
+            using optype = typename std::add_pointer<void volatile(vmsystem<T, STACK, MEMORY, PROGRAM>&)>::type;
+
+            using stack_type = STACK;
+            using memory_type = MEMORY;
+            using program_type = PROGRAM;
+
             T program_ptr = 0;
             bool running = true;
-            std::array<T,size> memory;
-            std::array<T,size> program;
-            std::stack<T> stack;
+
+            MEMORY memory;
+            PROGRAM program;
+            STACK stack;
+
         };
 
         template<typename... T>
@@ -43,28 +104,52 @@ namespace lvm {
 
         namespace opcodes {
             struct In : shared::opcodes::In {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_push<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     system.stack.push(0);
                     std::cin >> system.stack.top();
                     ++system.program_ptr;
                 };
+
+                template<typename T, typename std::enable_if<!has_push<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    ++system.stack_ptr;
+                    std::cin >> system.stack[system.stack_ptr];
+                    ++system.program_ptr;
+                };
             };
 
             struct Out : shared::opcodes::Out {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     std::cout << (char)system.stack.top();
                     system.stack.pop();
                     ++system.program_ptr;
                 };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    std::cout << (char)system.stack[system.stack_ptr];
+                    --system.stack_ptr;
+                    ++system.program_ptr;
+                };
+
             };
 
             struct Add : shared::opcodes::Add {
-                template<typename T>
-                static volatile void execute(T& system) {
-                    ++system.program_ptr;
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& vm) {
+                    vm.stack[vm.stack_ptr-1] += vm.stack[vm.stack_ptr];
+                    --vm.stack_ptr;
+                    ++vm.program_ptr;
                 };
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& vm) {
+                    auto a = vm.stack.top();
+                    vm.stack.pop();
+                    vm.stack.top() += a;
+                    ++vm.program_ptr;
+                };
+
             };
 
             struct Sub : shared::opcodes::Sub {
@@ -89,11 +174,17 @@ namespace lvm {
             };
 
             struct Mod : shared::opcodes::Mod {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& vm) {
+                    auto a = vm.stack.top();
+                    vm.stack.pop();
+                    vm.stack.top() = vm.stack.top() % a;
+                    ++vm.program_ptr;
+                };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
-                    auto a = system.stack.top();
-                    system.stack.pop();
-                    system.stack.top() = system.stack.top() % a;
+                    --system.stack_ptr;
+                    system.stack[system.stack_ptr] = system.stack[system.stack_ptr] % system.stack[system.stack_ptr+1];
                     ++system.program_ptr;
                 };
             };
@@ -162,32 +253,50 @@ namespace lvm {
             };
 
             struct Push : shared::opcodes::Push {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     ++system.program_ptr;
                     system.stack.push(system.program[system.program_ptr]);
                     ++system.program_ptr;
                 };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    system.stack[++system.stack_ptr] = system.program[++system.program_ptr];
+                    ++system.program_ptr;
+                };
             };
 
             struct Pop : shared::opcodes::Pop {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     system.stack.pop();
+                    ++system.program_ptr;
+                };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    --system.stack_ptr;
                     ++system.program_ptr;
                 };
             };
 
             struct Duplicate : shared::opcodes::Duplicate {
-                template<typename T>
+
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     system.stack.push(system.stack.top());
                     ++system.program_ptr;
                 };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    ++system.stack_ptr;
+                    system.stack[system.stack_ptr] = system.stack[system.stack_ptr - 1];
+                    ++system.program_ptr;
+                };
+
             };
 
             struct Swap : shared::opcodes::Swap {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     auto a = system.stack.top();
                     system.stack.pop();
@@ -195,18 +304,29 @@ namespace lvm {
                     system.stack.pop();
                     system.stack.push(a);
                     system.stack.push(b);
+                    ++system.program_ptr;
+                };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    std::swap(system.stack[system.stack_ptr], system.stack[system.stack_ptr-1]);
                     ++system.program_ptr;
                 };
             };
 
             struct CopyOver : shared::opcodes::CopyOver {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     auto a = system.stack.top();
                     system.stack.pop();
                     auto b = system.stack.top();
                     system.stack.push(a);
                     system.stack.push(b);
+                    ++system.program_ptr;
+                };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    ++system.stack_ptr;
+                    system.stack[system.stack_ptr] = system.stack[system.stack_ptr-2];
                     ++system.program_ptr;
                 };
             };
@@ -226,15 +346,20 @@ namespace lvm {
             };
 
             struct Jump : shared::opcodes::Jump {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     system.program_ptr = system.stack.top();
                     system.stack.pop();
                 };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    system.program_ptr = system.stack[system.stack_ptr];
+                    --system.stack_ptr;
+                };
             };
 
             struct JumpEqual : shared::opcodes::JumpEqual {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
                     auto addr = system.stack.top();
                     system.stack.pop();
@@ -244,17 +369,28 @@ namespace lvm {
                     system.stack.pop();
                     system.program_ptr = (a == b) ? addr : system.program_ptr + 1;
                 };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    system.stack_ptr -= 3;
+                    system.program_ptr = (system.stack[system.stack_ptr + 2] == system.stack[system.stack_ptr + 1]) ? system.stack[system.stack_ptr + 3] : system.program_ptr + 1;
+                };
             };
 
             struct JumpNotEqual : shared::opcodes::JumpNotEqual {
-                template<typename T>
+                template<typename T, typename std::enable_if<has_pop<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& system) {
+                    auto addr = system.stack.top();
+                    system.stack.pop();
                     auto a = system.stack.top();
                     system.stack.pop();
                     auto b = system.stack.top();
                     system.stack.pop();
-                    system.program_ptr = (a != b) ? system.stack.top() : system.program_ptr + 1;
-                    system.stack.pop();
+                    system.program_ptr = (a != b) ? addr : system.program_ptr + 1;
+                };
+                template<typename T, typename std::enable_if<!has_pop<typename T::stack_type>::value, int>::type = 0>
+                static volatile void execute(T& system) {
+                    system.stack_ptr -= 3;
+                    system.program_ptr = (system.stack[system.stack_ptr + 2] != system.stack[system.stack_ptr + 1]) ? system.stack[system.stack_ptr + 3] : system.program_ptr + 1;
                 };
             };
 
@@ -293,6 +429,9 @@ namespace lvm {
                 };
             };
 
+
+
+
             struct Halt : shared::opcodes::Halt {
                 template<typename T>
                 static volatile void execute(T& system) {
@@ -306,6 +445,8 @@ namespace lvm {
             template<typename T>
             using oc_11 = oc_11_impl<T, In, Out, Add, Sub, Mul, Div, Mod, Neg, Inc, Dec, And, Or, Not, Xor, ShiftLeft, ShiftRight, Push, Pop, Duplicate, Swap, CopyOver, Load, Store, Jump, JumpEqual, JumpNotEqual, JumpGreater, JumpGreaterEqual, JumpLesser, JumpLesserEqual, Nop, Halt>;
         };
+
+
 
 
         template<typename B, typename A>
@@ -322,6 +463,16 @@ namespace lvm {
         template<typename T>
         struct oc_array : oc_array_impl<typename T::type::optype, typename T::list::values>  {};
 
+
+        template<typename T, typename std::enable_if<need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
+        static int exit_code(T& vm) {
+            return vm.stack[vm.stack_ptr];
+        }
+
+        template<typename T, typename std::enable_if<!need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
+        static int exit_code(T& vm) {
+            return vm.stack.top();
+        }
 
     }
 }
