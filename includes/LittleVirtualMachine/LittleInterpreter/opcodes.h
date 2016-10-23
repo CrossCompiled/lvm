@@ -85,6 +85,17 @@ namespace lvm {
             PROGRAM program;
             STACK stack;
 
+            void load_program(const char* filename) {
+                std::ifstream is (filename, std::ifstream::binary);
+                if (is) {
+                    is.seekg (0, is.end);
+                    int length = (int32_t)is.tellg() / 4;
+                    is.seekg (0, is.beg);
+                    is.read(reinterpret_cast<char *>(program.data()), sizeof(int32_t)*length);
+                    is.close();
+                }
+            };
+
         };
 
         template<typename... T>
