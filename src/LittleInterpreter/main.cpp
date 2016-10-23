@@ -10,11 +10,15 @@
 
 namespace {
 
-#ifndef STATIC_STACK
-    using vmsystem    = lvm::interpreter::vmsystem<lvm::interpreter::oc_11, std::array<int32_t,10000>, std::array<int32_t, 10000>, std::array<int32_t, 10000>>;
+#ifdef STATIC_STACK
+    using STACK = std::array<int32_t,10000>;
 #else
-    using vmsystem    = lvm::interpreter::vmsystem<lvm::interpreter::oc_11, std::stack<int32_t>, std::array<int32_t, 10000>, std::array<int32_t, 10000>>;;
+    using STACK = std::stack<int32_t>;
 #endif
+    using MEMORY = std::array<int32_t, 10000>;
+    using PROGRAM = std::array<int32_t, 10000>;
+    using OPCODESET = lvm::interpreter::oc_11;
+    using vmsystem    = lvm::interpreter::vmsystem<OPCODESET, STACK, MEMORY, PROGRAM>;
     //using oc_11       = lvm::interpreter::opcodes::oc_11<vmsystem>;
     //using oc_11_array = lvm::interpreter::oc_array<oc_11>;
 
@@ -24,6 +28,13 @@ namespace {
 
 
 int main(int argn, char* argc[]) {
+#ifdef STATIC_STACK
+//    std::cout << "Static Build" << '\n';
+#else
+//    std::cout << "Dynamic Build" << '\n';
+#endif
+
+    //std::cout << lvm::interpreter::need_stack_ptr<std::array<int, 10>>::value << '\n';
 
     auto vm = vmsystem();
 
