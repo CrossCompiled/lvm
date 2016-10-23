@@ -8,11 +8,11 @@
 namespace lvm {
     namespace shared {
         namespace opcodes {
+
+
             template<int id>
-            
             struct base {
-                template<typename T>
-                static constexpr const T code = (T)id;
+                using code = std::integral_constant<int64_t, id>;
             };
             
             struct In : base<0x00> {

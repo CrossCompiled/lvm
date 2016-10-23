@@ -19,7 +19,7 @@ namespace lvm {
         struct MakeOpcodeMap{
 
             static void run(std::map<std::string, const int> & innerMap){
-                innerMap.insert(std::pair<std::string, const int32_t>(std::string(TL::First::name), (int32_t)TL::First::template code<int32_t>));
+                innerMap.insert(std::pair<std::string, const int32_t>(std::string(TL::First::name), TL::First::code::value));
                 MakeOpcodeMap<typename TL::Left>::run(innerMap);
             }
         };

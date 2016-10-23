@@ -20,16 +20,34 @@ namespace lvm {
             enum { value = false };
         };
 
+        template <typename T, typename std::array<T,0>::size_type F>
+        struct has_at<std::array<T, F>> {
+            enum { value = true };
+        };
+
+
+        /*
+
+        template <typename T, typename F = std::integral_constant<bool, false> >
+        struct has_at : F {};
+
+        template <typename T>
+        struct has_at<T, std::is_member_function_pointer<decltype(static_cast<void (T::*)()>(&T::at)) >> {};
+*/
         template <typename T>
         struct has_at<std::vector<T>> {
             enum { value = true };
         };
 
-        template <typename T, size_t F>
-        struct has_at<std::array<T, F>> {
-            enum { value = true };
-        };
 
+
+/*
+        template <typename T, typename F = std::integral_constant<bool, false> >
+        struct has_pop : F {};
+
+        template <typename T>
+        struct has_pop<T, std::is_member_function_pointer<decltype(static_cast<void (T::*)()>(&T::pop)) >> {};
+*/
         template <typename T>
         struct has_pop {
             enum { value = false };
@@ -50,6 +68,8 @@ namespace lvm {
             enum { value = true };
         };
 
+        //<editor-fold desc="Stack Pointer Templates">
+
         template <typename T>
         struct need_stack_ptr {
             enum { value = false };
@@ -60,30 +80,68 @@ namespace lvm {
             enum { value = true };
         };
 
-        template <typename T, bool> struct NeedStackPointer { };
+        template <typename STACK, bool> struct NeedStackPointer { };
 
-        template <typename T>
-        struct NeedStackPointer<T, true > {
-            T stack_ptr = 0;
+        template <typename STACK>
+        struct NeedStackPointer<STACK, true > {
+            typename STACK::value_type stack_ptr = 0;
+        };
+
+        //</editor-fold>
+
+        //<editor-fold desc="Set Templates">
+
+        template<typename... T>
+        struct set_holder {};
+
+        template<typename... T>
+        struct set {
+            using values = set_holder<T...>;
+            using size = typename std::integral_constant<int64_t, sizeof...(T)>;
         };
 
 
-        template <typename T, typename STACK, typename MEMORY, typename PROGRAM >
-        struct vmsystem : NeedStackPointer<T, need_stack_ptr<STACK>::value> {
-            using mytype = vmsystem<T, STACK, MEMORY, PROGRAM>;
-            using type = T;
-            using optype = typename std::add_pointer<void volatile(vmsystem<T, STACK, MEMORY, PROGRAM>&)>::type;
+        //</editor-fold>
+
+        //<editor-fold desc="Array Templates">
+
+        template<typename B, typename A>
+        struct array {};
+
+        template<typename A, template<class...> class L, class... T>
+        struct array<A, L<T...>> {
+            static const std::array<A, sizeof...(T)> data;
+        };
+
+        template<typename A, template<class...> class L, class... T>
+        const std::array<A, sizeof...(T)> array<A, L<T...>>::data = { T::execute... };
+
+        //</editor-fold>
+
+
+        template <typename OPCODESET, typename STACK, typename MEMORY, typename PROGRAM >
+        struct vmsystem : NeedStackPointer<STACK, need_stack_ptr<STACK>::value> {
 
             using stack_type = STACK;
             using memory_type = MEMORY;
             using program_type = PROGRAM;
 
-            T program_ptr = 0;
+
+            using opcodemap_value_type = typename std::add_pointer<void volatile(vmsystem<OPCODESET, STACK, MEMORY, PROGRAM>&)>::type;
+            using opcodemap = array<opcodemap_value_type, OPCODESET>;
+
+            typename PROGRAM::value_type program_ptr;
             bool running = true;
 
             MEMORY memory;
             PROGRAM program;
             STACK stack;
+
+            void init(const char* filename) {
+                this->load_program(filename);
+                this->running = true;
+                this->program_ptr = 0;
+            }
 
             void load_program(const char* filename) {
                 std::ifstream is (filename, std::ifstream::binary);
@@ -91,26 +149,20 @@ namespace lvm {
                     is.seekg (0, is.end);
                     int length = (int32_t)is.tellg() / 4;
                     is.seekg (0, is.beg);
-                    is.read(reinterpret_cast<char *>(program.data()), sizeof(int32_t)*length);
+                    is.read(reinterpret_cast<char *>(program.data()), sizeof(typename PROGRAM::value_type)*length);
                     is.close();
                 }
             };
 
-        };
+            int run() {
+                while(this->running) {
+                    opcodemap::data[program[program_ptr]](*this);
+                }
+                return 0;
+            }
 
-        template<typename... T>
-        struct oc_list_holder {};
+            int exit_code();
 
-        template<typename A, typename... T>
-        struct oc_list {
-            using values = oc_list_holder<T...>;
-            using size = typename std::integral_constant<A, sizeof...(T)>;
-        };
-
-        template<typename T, typename ...Args>
-        struct oc_11_impl {
-            using type = T;
-            using list = oc_list<typename T::type, Args...>;
         };
 
         namespace opcodes {
@@ -456,9 +508,6 @@ namespace lvm {
                 };
             };
 
-
-
-
             struct Halt : shared::opcodes::Halt {
                 template<typename T>
                 static volatile void execute(T& system) {
@@ -467,29 +516,47 @@ namespace lvm {
                 };
             };
 
-
-
-            template<typename T>
-            using oc_11 = oc_11_impl<T, In, Out, Add, Sub, Mul, Div, Mod, Neg, Inc, Dec, And, Or, Not, Xor, ShiftLeft, ShiftRight, Push, Pop, Duplicate, Swap, CopyOver, Load, Store, Jump, JumpEqual, JumpNotEqual, JumpGreater, JumpGreaterEqual, JumpLesser, JumpLesserEqual, Nop, Halt>;
         };
 
+        using oc_11 = set<
+                opcodes::In,
+                opcodes::Out,
+                opcodes::Add,
+                opcodes::Sub,
+                opcodes::Mul,
+                opcodes::Div,
+                opcodes::Mod,
+                opcodes::Neg,
+                opcodes::Inc,
+                opcodes::Dec,
+                opcodes::And,
+                opcodes::Or,
+                opcodes::Not,
+                opcodes::Xor,
+                opcodes::ShiftLeft,
+                opcodes::ShiftRight,
+                opcodes::Push,
+                opcodes::Pop,
+                opcodes::Duplicate,
+                opcodes::Swap,
+                opcodes::CopyOver,
+                opcodes::Load,
+                opcodes::Store,
+                opcodes::Jump,
+                opcodes::JumpEqual,
+                opcodes::JumpNotEqual,
+                opcodes::JumpGreater,
+                opcodes::JumpGreaterEqual,
+                opcodes::JumpLesser,
+                opcodes::JumpLesserEqual,
+                opcodes::Nop,
+                opcodes::Halt
+        >;
 
-
-
-        template<typename B, typename A>
-        struct oc_array_impl{};
-
-        template<typename A, template<class...> class L, class... T>
-        struct oc_array_impl<A, L<T...>> {
-            static const std::array<A, sizeof...(T)> data;
-        };
-
-        template<typename A, template<class...> class L, class... T>
-        const std::array<A, sizeof...(T)> oc_array_impl<A, L<T...>>::data = { T::execute... };
-
-        template<typename T>
-        struct oc_array : oc_array_impl<typename T::type::optype, typename T::list::values>  {};
-
+//        template<typename T, typename std::enable_if<need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
+  //      int vmsystem::exit_code() {
+    //        return vm.stack[vm.stack_ptr];
+      //  }
 
         template<typename T, typename std::enable_if<need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
         static int exit_code(T& vm) {
