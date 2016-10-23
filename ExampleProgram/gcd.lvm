@@ -1,17 +1,205 @@
+0
+0
+STOR
+
+
+
+"\nFind Greatest Common Divisor\n============================\n"
+
+; ============= CALL PRINTSTACK  ================
+@RETUR1
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@PRINTSTACK
+JMP
+:RETUR1
+
+"First Number: "
+
+; ============= CALL PRINTSTACK  ================
+@RETUR11
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@PRINTSTACK
+JMP
+:RETUR11
+
 IN ; read integer "A" from standard input
+
+"Second Number: "
+
+; ============= CALL PRINTSTACK  ================
+@RETUR12
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@PRINTSTACK
+JMP
+:RETUR12
+
 IN ; read integer "B" from standard input
 
+; ============= CALL GCD =================
+@RETUR2
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@GCD
+JMP
+:RETUR2
+
+; ============= CALL INT2STR  ================
+@RETUR3
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@INT2STR
+JMP
+:RETUR3
+
+"Result: "
+
+; ============= CALL PRINTSTACK  ================
+@RETUR5
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@PRINTSTACK
+JMP
+:RETUR5
+
+
+
+; ============= CALL PRINTSTACK  ================
+@RETUR4
+0
+LOAD
+INC
+DUP
+0
+STOR
+STOR
+@PRINTSTACK
+JMP
+:RETUR4
+
+
+; ============= END OF PROGRAM ==============
+:END
+10
+13
+OUT
+OUT
+0
+HALT
+
+
+; =======================   FUNC GCD  ====================
 :GCD ; this is a label
 DUP ; if B is 0 then A is the gcd
 0 ; (immediate values get pushed on the stack)
-@END ; (this is how you put the address of a label onto the stack)
+@GCDDONE ; (this is how you put the address of a label onto the stack)
 JE ; (this will jump to the address at top of stack if the preceding two values are equal)
 SWP ; if B is not 0 then the result is gcd(B, A modulo B)
-OVR 
+OVR
 MOD
 @GCD
 JMP ; recursion!
+:GCDDONE
+POP ; remove 0 from top of stack
 
-:END
-POP ; remove 0 from top of stack 
-OUT ; now the result is at the top, print it.
+; FUNC GCD RETURN
+0
+LOAD
+DUP
+DEC
+0
+STOR
+LOAD
+JMP
+
+
+
+; =======================   FUNC INT2STR   ==========================
+:INT2STR
+0
+SWP
+:MODINT
+DUP
+10
+MOD
+48
+ADD
+SWP
+10
+DIV
+DUP
+0
+@MODINT
+JNE
+POP
+
+
+; FUNC LOADINIT RETURN
+0
+LOAD
+DUP
+DEC
+0
+STOR
+LOAD
+JMP
+
+
+; =======================   FUNC PRINTSTACK ==========================
+
+; FUNC PRINTSTACK
+
+:PRINTSTACK
+DUP
+0
+@PRINTSTACKDONE
+JE
+OUT
+@PRINTSTACK
+JMP
+:PRINTSTACKDONE
+POP
+
+; FUNC RETURN
+0
+LOAD
+DUP
+DEC
+0
+STOR
+LOAD
+JMP
+; END PRINTSTACK
+
