@@ -181,7 +181,7 @@ namespace lvm {
 					return discard_event();
 				}
 
-				throw ParsingError("Unknown identifier: first");
+				throw ParsingError("Unknown identifier: " + std::to_string(first));
 			}
 		};
 
@@ -328,7 +328,7 @@ namespace lvm {
 
 			sc::result react(const WriteByteCodeEvent& e) {
 				context<Compiler>().get_generator().OutputCode(e.get_stream());
-				return transit<Initial>();
+				return discard_event();
 			}
 		};
 	}
