@@ -1,42 +1,53 @@
 // read a file into memory
+
+
+#include <LittleVirtualMachine/LittleInterpreter/opcodes.h>
+
 #include <iostream>
+#include <fstream>
 #include <stack>
 #include <vector>
 #include <array>
-#include <fstream>
-#include <LittleVirtualMachine/LittleInterpreter/opcodes.h>
-
-
+#include <type_traits>
 
 namespace {
-    using vmsystem    = lvm::interpreter::vmsystem<int32_t, std::array<int32_t,10000>, std::array<int32_t, 10000>, std::array<int32_t, 10000>>;
-//    using vmsystem    = lvm::interpreter::vmsystem<int32_t, std::stack<int32_t>, std::array<int32_t, 100>, std::array<int32_t, 100>>;
-    using oc_11       = lvm::interpreter::opcodes::oc_11<vmsystem>;
-    using oc_11_array = lvm::interpreter::oc_array<oc_11>;
 
-    void load_program(vmsystem& vm, const char* filename) {
-        std::ifstream is (filename, std::ifstream::binary);
-        if (is) {
-            is.seekg (0, is.end);
-            int length = (int32_t)is.tellg() / 4;
-            is.seekg (0, is.beg);
-            is.read(reinterpret_cast<char *>(vm.program.data()), sizeof(int32_t)*length);
-            is.close();
-        }
-    };
+#ifndef STATIC_STACK
+    using STACK = std::array<int32_t,10000>;
+#else
+    using STACK = std::stack<int32_t>;
+#endif
+    using MEMORY = std::array<int32_t, 10000>;
+    using PROGRAM = std::vector<int32_t>;
+    using OPCODESET = lvm::interpreter::oc_11;
+    using CIN = std::istream;
+    using COUT = std::ostream;
+    using vmsystem    = lvm::interpreter::vmsystem<OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>;
+
+
 }
 
+
+
 int main(int argn, char* argc[]) {
+#ifndef STATIC_STACK
+//    std::cout << "Static Build" << '\n';
+#else
+//    std::cout << "Dynamic Build" << '\n';
+#endif
 
-    auto vm = vmsystem();
+    //std::cout << lvm::interpreter::need_stack_ptr<std::array<int, 10>>::value << '\n';
 
-    std::cout << argc[1] << std::endl;
-    load_program(vm, argc[1]);
+    auto vm = vmsystem(std::cin, std::cout);
 
-    while(vm.running) {
-        oc_11_array::data[vm.program[vm.program_ptr]](vm);
+    std::ifstream binary(argc[1]);
+    if (binary) {
+        vm.init(binary);
+        binary.close();
     }
 
-    return lvm::interpreter::exit_code(vm);
+    vm.run();
+
+    return vm.exit_code();
 
 }
