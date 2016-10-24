@@ -390,10 +390,21 @@ namespace lvm {
             };
 
             struct JumpLesserEqual : shared::opcodes::JumpLesserEqual {
-                template<typename T>
-                static volatile void execute(T& vm) {
-                    ++vm.program_ptr;
-                };
+							template<typename T, typename std::enable_if<!has_at<typename T::stack_type>::value, int>::type = 0>
+							static volatile void execute(T& vm) {
+								auto addr = vm.stack.top();
+								vm.stack.pop();
+								auto a = vm.stack.top();
+								vm.stack.pop();
+								auto b = vm.stack.top();
+								vm.stack.pop();
+								vm.program_ptr = (a <= b) ? addr : vm.program_ptr + 1;
+							};
+							template<typename T, typename std::enable_if<has_at<typename T::stack_type>::value, int>::type = 0>
+							static volatile void execute(T& vm) {
+								vm.stack.ptr -= 3;
+								vm.program_ptr = (vm.stack[vm.stack.ptr + 2] <= vm.stack[vm.stack.ptr + 1]) ? vm.stack[vm.stack.ptr + 3] : vm.program_ptr + 1;
+							};
             };
 
             struct Nop : shared::opcodes::Nop {

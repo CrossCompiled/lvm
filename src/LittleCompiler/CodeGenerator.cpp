@@ -75,12 +75,15 @@ namespace lvm {
 
         void CodeGenerator::GeneratePrint() {
             int print = code.size();
-            int end = print + 5;
+            int end = print + 10;
             code.push_back(OpcodeMap["DUP"]);
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(0);
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(end);
             code.push_back(OpcodeMap["JE"]);
             code.push_back(OpcodeMap["OUT"]);
+            code.push_back(OpcodeMap["PUSH"]);
             code.push_back(print);
             code.push_back(OpcodeMap["JMP"]);
             code.push_back(OpcodeMap["POP"]);
