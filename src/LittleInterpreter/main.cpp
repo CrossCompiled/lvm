@@ -36,10 +36,9 @@ namespace {
     template<typename ...A>
     using OPCODEMAP = lvm::interpreter::vector<A...>;
     using OPCODESET = lvm::interpreter::oc_11;
-    using CIN = std::istream;
-    using COUT = std::ostream;
-    using vmsystem    = lvm::interpreter::vmsystem<lvm::interpreter::vector, OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>;
-
+    using CIN       = std::istream;
+    using COUT      = std::ostream;
+    using vmsystem  = lvm::interpreter::vmsystem<lvm::interpreter::vector, OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>;
 
 }
 

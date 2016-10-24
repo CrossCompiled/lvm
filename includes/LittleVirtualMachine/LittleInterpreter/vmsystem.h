@@ -10,9 +10,6 @@ namespace lvm {
 
         //<editor-fold desc="VMStack">
 
-        template <typename T>
-        struct need_stack_ptr : has_at<T> {};
-
         template <typename STACK, bool> struct VMStack : STACK {
             void init(){};
         };
@@ -114,7 +111,6 @@ namespace lvm {
                 }
 
             };
-
 
             template<typename ISTREAM, typename IPROGRAM=PROGRAM>
             typename std::enable_if<has_data<IPROGRAM>::value && (has_resize<IPROGRAM>::value), void>::type
