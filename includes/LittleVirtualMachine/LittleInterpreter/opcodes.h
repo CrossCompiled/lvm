@@ -5,69 +5,16 @@
 #ifndef LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 #define LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 
-#include <array>
+#include <LittleVirtualMachine/LittleInterpreter/has.h>
 #include <LittleVirtualMachine/LittleShared/opcodes.h>
-
-#define GENERATE_HAS(member)                                               \
-                                                                                  \
-template < class T >                                                              \
-class has_##member ## _impl                                                          \
-{                                             \
-    struct Fallback { int member; };                                                     \
-    struct Derived : T, Fallback { };                                               \
-                                                                                    \
-    template<typename U, U> struct Check;                                           \
-                                                                                    \
-    typedef char ArrayOfOne[1];                                                     \
-    typedef char ArrayOfTwo[2];                                                     \
-                                                                                    \
-    template<typename U> static ArrayOfOne & func(Check<int Fallback::*, &U::member> *); \
-    template<typename U> static ArrayOfTwo & func(...);                             \
-  public:                                                                           \
-    static constexpr bool value = (sizeof(func<Derived>(0)) == 2);                       \
-};  \
-  \
-template < class T >                                                              \
-struct has_##member : public std::integral_constant<bool, has_##member ## _impl<T>::value> {};
-
-
-
+#include <array>
+#include <vector>
+#include <list>
 
 
 
 namespace lvm {
     namespace interpreter {
-
-        GENERATE_HAS(resize);
-        GENERATE_HAS(data);
-        GENERATE_HAS(at);
-        GENERATE_HAS(push);
-
-        //<editor-fold desc="VMStack">
-
-        template <typename T>
-        struct has_stack_ptr : has_push<T> {};
-
-        template <typename STACK, bool> struct VMStack : STACK {};
-
-        template <typename STACK>
-        struct VMStack<STACK, true > : STACK {
-            typename STACK::value_type ptr = 0;
-
-            void pop() {
-                --ptr;
-            };
-
-            void push(typename STACK::value_type value) {
-                (*this)[++ptr] = value;
-            };
-
-            typename STACK::value_type& top () {
-                return (*this)[ptr];
-            }
-        };
-
-        //</editor-fold>
 
         //<editor-fold desc="Set Templates">
 
@@ -80,6 +27,21 @@ namespace lvm {
             using size = typename std::integral_constant<int64_t, sizeof...(T)>;
         };
 
+
+        //</editor-fold>
+
+        //<editor-fold desc="Vector Templates">
+
+        template<typename A, typename B>
+        struct vector {};
+
+        template<typename A, template<class...> class L, class... T>
+        struct vector<A, L<T...>> {
+            static const std::vector<A> data;
+        };
+
+        template<typename A, template<class...> class L, class... T>
+        const std::vector<A> vector<A, L<T...>>::data = { T::execute... };
 
         //</editor-fold>
 
@@ -98,75 +60,20 @@ namespace lvm {
 
         //</editor-fold>
 
+        //<editor-fold desc="List Templates">
 
-        template <typename OPCODESET, typename STACK, typename MEMORY, typename PROGRAM, typename CIN, typename COUT >
-        struct vmsystem : VMStack<STACK, !has_stack_ptr<STACK>::value> {
+        template<typename A, typename B>
+        struct list {};
 
-            vmsystem(CIN& cin, COUT& cout) : cin(cin), cout(cout) {}
-
-            using opcodemap_value_type = typename std::add_pointer<void volatile(vmsystem<OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>&)>::type;
-
-            using memory_type  = MEMORY;
-            using program_type = PROGRAM;
-            using cin_type     = CIN;
-            using cout_type    = COUT;
-            using stack_type   = VMStack<STACK, !has_stack_ptr<STACK>::value>;
-            using opcodemap    = array<opcodemap_value_type, OPCODESET>;
-
-            typename PROGRAM::value_type program_ptr;
-            bool running = true;
-
-            memory_type memory;
-            program_type program;
-            stack_type stack;
-            cout_type& cout;
-            cin_type& cin;
-
-            template<typename ISTREAM>
-            void init(ISTREAM& is) {
-                this->load_program(is);
-                this->running = true;
-                this->program_ptr = 0;
-            }
-
-            template<typename ISTREAM, typename IPROGRAM=PROGRAM>
-            typename std::enable_if<has_data<IPROGRAM>::value && (!has_resize<IPROGRAM>::value), void>::type load_program(ISTREAM& is) {
-                if (is) {
-                    is.seekg (0, is.end);
-                    int length = is.tellg() * sizeof(typename ISTREAM::char_type);
-                    is.seekg (0, is.beg);
-                    is.read(reinterpret_cast<typename ISTREAM::char_type *>(program.data()), length);
-                }
-
-            };
-
-
-            template<typename ISTREAM, typename IPROGRAM=PROGRAM>
-            typename std::enable_if<has_data<IPROGRAM>::value && (has_resize<IPROGRAM>::value), void>::type load_program(ISTREAM& is) {
-                if (is) {
-                    is.seekg (0, is.end);
-                    int length = is.tellg() * sizeof(typename ISTREAM::char_type);
-                    is.seekg (0, is.beg);
-                    program.resize(length / sizeof(typename PROGRAM::value_type));
-                    is.read(reinterpret_cast<typename ISTREAM::char_type *>(program.data()), length);
-                }
-
-            };
-
-            int run() {
-                while(this->running) {
-                    opcodemap::data[program[program_ptr]](*this);
-                }
-                return 0;
-            }
-
-            int exit_code() {
-                return stack.top();
-            };
-
+        template<typename A, template<class...> class L, class... T>
+        struct list<A, L<T...>> {
+            static const std::list<A> data;
         };
 
+        template<typename A, template<class...> class L, class... T>
+        const std::list<A> list<A, L<T...>>::data = { T::execute... };
 
+        //</editor-fold>
 
         namespace opcodes {
             struct In : shared::opcodes::In {

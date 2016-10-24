@@ -1,28 +1,44 @@
 // read a file into memory
 
 
+#include <LittleVirtualMachine/LittleInterpreter/vmsystem.h>
 #include <LittleVirtualMachine/LittleInterpreter/opcodes.h>
 
 #include <iostream>
 #include <fstream>
 #include <stack>
 #include <vector>
+#include <list>
 #include <array>
-#include <type_traits>
 
 namespace {
 
-#ifndef STATIC_STACK
+#ifdef STATIC_STACK
     using STACK = std::array<int32_t,10000>;
 #else
     using STACK = std::stack<int32_t>;
 #endif
-    using MEMORY = std::array<int32_t, 10000>;
+
+#ifdef STATIC_PROGRAM
+    using PROGRAM = std::array<int32_t,10000>;
+#else
     using PROGRAM = std::vector<int32_t>;
+#endif
+
+#ifdef STATIC_MEMORY
+    using MEMORY = std::array<int32_t,10000>;
+#else
+    using MEMORY = std::vector<int32_t>;
+#endif
+
+
+
+    template<typename ...A>
+    using OPCODEMAP = lvm::interpreter::vector<A...>;
     using OPCODESET = lvm::interpreter::oc_11;
     using CIN = std::istream;
     using COUT = std::ostream;
-    using vmsystem    = lvm::interpreter::vmsystem<OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>;
+    using vmsystem    = lvm::interpreter::vmsystem<lvm::interpreter::vector, OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>;
 
 
 }
@@ -30,13 +46,23 @@ namespace {
 
 
 int main(int argn, char* argc[]) {
-#ifndef STATIC_STACK
-//    std::cout << "Static Build" << '\n';
+#ifdef STATIC_STACK
+    std::cout << "Static Stack" << std::endl;
 #else
-//    std::cout << "Dynamic Build" << '\n';
+    std::cout << "Dynamic Stack" << std::endl;
 #endif
 
-    //std::cout << lvm::interpreter::need_stack_ptr<std::array<int, 10>>::value << '\n';
+#ifdef STATIC_PROGRAM
+    std::cout << "Static Program" << std::endl;
+#else
+    std::cout << "Dynamic Program" << std::endl;
+#endif
+
+#ifdef STATIC_MEMORY
+    std::cout << "Static Memory" << std::endl;
+#else
+    std::cout << "Dynamic Memory" << std::endl;
+#endif
 
     auto vm = vmsystem(std::cin, std::cout);
 
