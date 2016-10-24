@@ -1,12 +1,22 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <string>
 #include "LittleVirtualMachine/LittleCompiler/Compiler.h"
 #include "LittleVirtualMachine/LittleCompiler/CodeGenerator.h"
 
 namespace compiler = lvm::compiler;
 
 int main(int argc, char** argv) {
+	if (argc < 3)
+	{
+		std::cout << "Usage: " << argv[0] << " {source file} {output file}" << std::endl;
+		return 1;
+	};
+
+	std::string inputPath(argv[1]);
+	std::string outputPath(argv[2]);
+
 	try {
 		compiler::CodeGenerator codeGenerator;
 		compiler::FileHelper fileHelper;
@@ -14,7 +24,6 @@ int main(int argc, char** argv) {
 		compiler::Compiler compiler(codeGenerator, fileHelper);
 		compiler.initiate();
 
-		std::string inputPath = static_cast<std::string>(argv[1]);
 		compiler.process_event(lvm::compiler::LoadFileEvent(inputPath));
 
 		while (!compiler.get_input().get_ro_stream().eof())
@@ -23,7 +32,7 @@ int main(int argc, char** argv) {
 		compiler.process_event(lvm::compiler::ProcessCharEvent());
 		compiler.process_event(lvm::compiler::ProcessCharEvent());
 
-		std::ofstream output("TestOut", std::ios::binary);
+		std::ofstream output(outputPath, std::ios_base::binary);
 
 		compiler.process_event(lvm::compiler::WriteByteCodeEvent(output));
 		compiler.process_event(lvm::compiler::WriteByteCodeEvent(output));
