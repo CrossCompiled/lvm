@@ -24,6 +24,9 @@ target_include_directories(${LECTURE} PUBLIC ${Boost_INCLUDE_DIRS})
 set_target_properties(${LECTURE} PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)
+IF(DEFINED STATIC_STACK)
+    target_compile_definitions(${LECTURE} PUBLIC STATIC_STACK=1)
+ENDIF()
 
 #LittleApplication
 add_executable(LittleApplication src/LittleApplication/main.cpp)
@@ -44,7 +47,15 @@ set_target_properties(LittleCompiler PROPERTIES
 # LittleInterpreter
 add_executable(LittleInterpreter src/LittleInterpreter/main.cpp)
 target_link_libraries(LittleInterpreter ${LECTURE})
-
+IF(DEFINED STATIC_STACK)
+target_compile_definitions(LittleInterpreter PUBLIC STATIC_STACK=${STATIC_STACK})
+ENDIF()
+IF(DEFINED STATIC_PROGRAM)
+    target_compile_definitions(LittleInterpreter PUBLIC STATIC_PROGRAM=${STATIC_PROGRAM})
+ENDIF()
+IF(DEFINED STATIC_MEMORY)
+    target_compile_definitions(LittleInterpreter PUBLIC STATIC_MEMORY=${STATIC_MEMORY})
+ENDIF()
 set_target_properties(LittleInterpreter PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES)

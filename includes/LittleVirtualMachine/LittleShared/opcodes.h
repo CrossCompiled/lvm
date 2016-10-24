@@ -5,10 +5,11 @@
 #ifndef LITTLEVIRTUALMACHINE_LITTLESHARED_OPCODES_H
 #define LITTLEVIRTUALMACHINE_LITTLESHARED_OPCODES_H
 
+#include <cstdint>
+
 namespace lvm {
     namespace shared {
         namespace opcodes {
-
 
             template<int id>
             struct base {
