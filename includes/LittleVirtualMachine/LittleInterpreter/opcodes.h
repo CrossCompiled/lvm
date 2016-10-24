@@ -5,33 +5,48 @@
 #ifndef LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 #define LITTLEVIRTUALMACHINE_INTERPRETER_OPCODES_H
 
-#include <iostream>
-#include <stack>
-#include <vector>
 #include <array>
-#include <fstream>
-
 #include <LittleVirtualMachine/LittleShared/opcodes.h>
+
+#define GENERATE_HAS(member)                                               \
+                                                                                  \
+template < class T >                                                              \
+class has_##member ## _impl                                                          \
+{                                             \
+    struct Fallback { int member; };                                                     \
+    struct Derived : T, Fallback { };                                               \
+                                                                                    \
+    template<typename U, U> struct Check;                                           \
+                                                                                    \
+    typedef char ArrayOfOne[1];                                                     \
+    typedef char ArrayOfTwo[2];                                                     \
+                                                                                    \
+    template<typename U> static ArrayOfOne & func(Check<int Fallback::*, &U::member> *); \
+    template<typename U> static ArrayOfTwo & func(...);                             \
+  public:                                                                           \
+    static constexpr bool value = (sizeof(func<Derived>(0)) == 2);                       \
+};  \
+  \
+template < class T >                                                              \
+struct has_##member : public std::integral_constant<bool, has_##member ## _impl<T>::value> {};
+
+
+
+
+
+
 namespace lvm {
     namespace interpreter {
 
-        template <typename T>
-        struct has_at : std::false_type {};
-
-        template <typename T, typename std::array<T,0>::size_type F>
-        struct has_at<std::array<T, F>> : std::true_type {};
-
-        template <typename T>
-        struct has_at<std::vector<T>> : std::true_type {};
-
+        GENERATE_HAS(resize);
+        GENERATE_HAS(data);
+        GENERATE_HAS(at);
+        GENERATE_HAS(push);
 
         //<editor-fold desc="VMStack">
 
         template <typename T>
-        struct need_stack_ptr : std::false_type {};
-
-        template <typename T, typename std::array<T,0>::size_type F>
-        struct need_stack_ptr<std::array<T, F>> : std::true_type {};
+        struct has_stack_ptr : has_push<T> {};
 
         template <typename STACK, bool> struct VMStack : STACK {};
 
@@ -84,14 +99,18 @@ namespace lvm {
         //</editor-fold>
 
 
-        template <typename OPCODESET, typename STACK, typename MEMORY, typename PROGRAM >
-        struct vmsystem : VMStack<STACK, need_stack_ptr<STACK>::value> {
+        template <typename OPCODESET, typename STACK, typename MEMORY, typename PROGRAM, typename CIN, typename COUT >
+        struct vmsystem : VMStack<STACK, !has_stack_ptr<STACK>::value> {
 
-            using opcodemap_value_type = typename std::add_pointer<void volatile(vmsystem<OPCODESET, STACK, MEMORY, PROGRAM>&)>::type;
+            vmsystem(CIN& cin, COUT& cout) : cin(cin), cout(cout) {}
+
+            using opcodemap_value_type = typename std::add_pointer<void volatile(vmsystem<OPCODESET, STACK, MEMORY, PROGRAM, CIN, COUT>&)>::type;
 
             using memory_type  = MEMORY;
             using program_type = PROGRAM;
-            using stack_type   = VMStack<STACK, need_stack_ptr<STACK>::value>;
+            using cin_type     = CIN;
+            using cout_type    = COUT;
+            using stack_type   = VMStack<STACK, !has_stack_ptr<STACK>::value>;
             using opcodemap    = array<opcodemap_value_type, OPCODESET>;
 
             typename PROGRAM::value_type program_ptr;
@@ -100,22 +119,38 @@ namespace lvm {
             memory_type memory;
             program_type program;
             stack_type stack;
+            cout_type& cout;
+            cin_type& cin;
 
-            void init(const char* filename) {
-                this->load_program(filename);
+            template<typename ISTREAM>
+            void init(ISTREAM& is) {
+                this->load_program(is);
                 this->running = true;
                 this->program_ptr = 0;
             }
 
-            void load_program(const char* filename) {
-                std::ifstream is (filename, std::ifstream::binary);
+            template<typename ISTREAM, typename IPROGRAM=PROGRAM>
+            typename std::enable_if<has_data<IPROGRAM>::value && (!has_resize<IPROGRAM>::value), void>::type load_program(ISTREAM& is) {
                 if (is) {
                     is.seekg (0, is.end);
-                    int length = (int32_t)is.tellg() / 4;
+                    int length = is.tellg() * sizeof(typename ISTREAM::char_type);
                     is.seekg (0, is.beg);
-                    is.read(reinterpret_cast<char *>(program.data()), sizeof(typename PROGRAM::value_type)*length);
-                    is.close();
+                    is.read(reinterpret_cast<typename ISTREAM::char_type *>(program.data()), length);
                 }
+
+            };
+
+
+            template<typename ISTREAM, typename IPROGRAM=PROGRAM>
+            typename std::enable_if<has_data<IPROGRAM>::value && (has_resize<IPROGRAM>::value), void>::type load_program(ISTREAM& is) {
+                if (is) {
+                    is.seekg (0, is.end);
+                    int length = is.tellg() * sizeof(typename ISTREAM::char_type);
+                    is.seekg (0, is.beg);
+                    program.resize(length / sizeof(typename PROGRAM::value_type));
+                    is.read(reinterpret_cast<typename ISTREAM::char_type *>(program.data()), length);
+                }
+
             };
 
             int run() {
@@ -131,19 +166,21 @@ namespace lvm {
 
         };
 
+
+
         namespace opcodes {
             struct In : shared::opcodes::In {
                 template<typename T, typename std::enable_if<!has_at<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& vm) {
                     vm.stack.push(0);
-                    std::cin >> vm.stack.top();
+                    vm.cin >> vm.stack.top();
                     ++vm.program_ptr;
                 };
 
                 template<typename T, typename std::enable_if<has_at<typename T::stack_type>::value, int>::type = 0>
                 static volatile void execute(T& vm) {
                     ++vm.stack.ptr;
-                    std::cin >> vm.stack[vm.stack.ptr];
+                    vm.cin >> vm.stack[vm.stack.ptr];
                     ++vm.program_ptr;
                 };
             };
@@ -151,7 +188,7 @@ namespace lvm {
             struct Out : shared::opcodes::Out {
                 template<typename T>
                 static volatile void execute(T& vm) {
-                    std::cout << (char)vm.stack.top();
+                    vm.cout << (char)vm.stack.top();
                     vm.stack.pop();
                     ++vm.program_ptr;
                 };
@@ -469,8 +506,6 @@ namespace lvm {
 
         };
 
-        using oc_11 = set<opcodes::Add, opcodes::Sub>;
-        /*
         using oc_11 = set<
                 opcodes::In,
                 opcodes::Out,
@@ -504,22 +539,8 @@ namespace lvm {
                 opcodes::JumpLesserEqual,
                 opcodes::Nop,
                 opcodes::Halt
-        >;*/
+        >;
 
-//        template<typename T, typename std::enable_if<need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
-  //      int vmsystem::exit_code() {
-    //        return vm.stack[vm.stack.ptr];
-      //  }
-
-        template<typename T, typename std::enable_if<need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
-        static int exit_code(T& vm) {
-            return vm.stack[vm.stack.ptr];
-        }
-
-        template<typename T, typename std::enable_if<!need_stack_ptr<typename T::stack_type>::value, int>::type = 0>
-        static int exit_code(T& vm) {
-            return vm.stack.top();
-        }
 
     }
 }
